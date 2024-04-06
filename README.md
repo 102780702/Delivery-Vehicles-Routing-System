@@ -2,8 +2,9 @@
 upload your files here, there is a "add file" button at top right
 
 # 06-04-2024 Junsieng
-(1) I have uploaded the function for reading txt file, and store those coordinates into a list.
-Each coordinate treat as an object, each object got 2 var, longtitude and langtitude, get these value by using getLatitude() and getLongitude()
-*main.java need these, copy the code into it
-
-(2) Point to point render on map is complete
+(1) readTXT.java
+    able to read txt file
+(2) gui.html + index.js
+    Able to render point to point on the map
+(3) TransferServer.java + index.js + gui.html
+    data from back to front (java->javascript->html)
