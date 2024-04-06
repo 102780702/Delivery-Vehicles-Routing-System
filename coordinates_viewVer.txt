@@ -1,0 +1,19 @@
+1.532302,110.357173 Swinburne Sarawak
+1.535546,110.358202 The Spring
+1.520725,110.354431 CityOne
+1.526855,110.369588 Vivacity
+1.511337,110.352239 Rume
+1.487123,110.341599 Kuching Airport
+1.507103,110.360874 Everise BDC
+1.555485,110.342379 Borneo Cultures Museum
+1.588484,110.360216 Perdabanan Staduim Negeri Sarawak
+1.46668,110.425148  UNIMAS
+1.543655,110.338852 Sarawak General Hospital
+1.550192,110.341737 St. Joseph's Cathedral
+1.454789,110.45877  Summer Mall
+1.559603,110.3448   The Old Courthouse
+1.558697,110.34450  Waterfront Hotel
+1.557889,110.353534 Plaza Merdeka
+1.562618,110.405601 BCCK
+1.555303,110.351251 Pullman
+1.5615714,110.3476374 Kuching, Sarawak New Waterfront
