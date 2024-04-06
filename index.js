@@ -78,6 +78,17 @@ async function initMap()
     }
     
     calculateRoute(0);
+
+    fetch('http://localhost:8080')
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+
+            const jsonDataContainer = document.getElementById('jsonData');
+
+            jsonDataContainer.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => console.error('Error:', error));
 }
 
 initMap();
