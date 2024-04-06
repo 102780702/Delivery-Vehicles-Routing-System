@@ -1,5 +1,7 @@
 {
     "java.project.referencedLibraries": [
-        "C:/Users/junsi/jade.jar"
+        "C:/Users/junsi/GitHub/Delivery-Vehicles-Routing-System/jade.jar",
+        "C:/Users/junsi/GitHub/Delivery-Vehicles-Routing-System/gson.jar",
+        "C:/Users/junsi/GitHub/Delivery-Vehicles-Routing-System/nanohttpd.jar"
     ]
 }
