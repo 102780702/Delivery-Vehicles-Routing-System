@@ -4,13 +4,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class readTXT {
+public class readTXT 
+{
     public static void main(String[] args) 
     {
         String fileName = "coordinates.txt";
         List<Coordinate> coordinates = readCoordinatesFromFile(fileName);
-        
-        // print out coordinates in terminal 
+
+        // print out coordinates in terminal
         for (Coordinate coordinate : coordinates) 
         {
             System.out.println(coordinate);
@@ -34,46 +35,19 @@ public class readTXT {
                     double latitude = Double.parseDouble(parts[0]);
                     double longitude = Double.parseDouble(parts[1]);
                     coordinates.add(new Coordinate(latitude, longitude));
-                } else 
+                } 
+                else 
                 {
                     System.err.println("Invalid coordinate format: " + line);
                 }
                 line = reader.readLine();
             }
             reader.close();
-        } catch (IOException e) 
+        } 
+        catch (IOException e) 
         {
             e.printStackTrace();
         }
         return coordinates;
-    }
-}
-
-// coordinate class
-class Coordinate 
-{
-    private double latitude;
-    private double longitude;
-
-    public Coordinate(double latitude, double longitude) 
-    {
-        this.latitude = latitude;
-        this.longitude = longitude;
-    }
-
-    public double getLatitude() 
-    {
-        return latitude;
-    }
-
-    public double getLongitude() 
-    {
-        return longitude;
-    }
-
-    @Override
-    public String toString() 
-    {
-        return "Latitude: " + latitude + ", Longitude: " + longitude;
     }
 }
