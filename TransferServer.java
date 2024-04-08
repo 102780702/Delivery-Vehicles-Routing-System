@@ -10,7 +10,6 @@ import java.io.IOException;
 
 public class TransferServer extends NanoHTTPD 
 {
-
     public TransferServer(int port) 
     {
         super(port);
@@ -62,7 +61,6 @@ public class TransferServer extends NanoHTTPD
         map1.put("Area_B", area1B);
         map1.put("Area_C", area1C);
         map1.put("Area_D", area1D);
-
 
         // 2nd batch delivery (ABCD)
         Map<String, List<List<Coordinate>>> map2 = new HashMap<>();
