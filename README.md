@@ -8,3 +8,5 @@ upload your files here, there is a "add file" button at top right
 06-04 - TransferServer.java + index.js + gui.html: data from back to front (java->javascript->html)
 
 07-04 - optimize data transfer function, multi area render available (prototype)
+
+08-04 - Optimize & debug multi area render function
