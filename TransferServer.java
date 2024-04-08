@@ -27,35 +27,41 @@ public class TransferServer extends NanoHTTPD
         // 1st batch delivery (ABCD)
         Map<String, List<List<Coordinate>>> map1 = new HashMap<>();
 
-        // Area A coordinate list
         List<List<Coordinate>> area1A = new ArrayList<>();
-
-        // Area B coordinate list
         List<List<Coordinate>> area1B = new ArrayList<>();
+        List<List<Coordinate>> area1C = new ArrayList<>();
+        List<List<Coordinate>> area1D = new ArrayList<>();
         
-        // Area A locations need to be deliver
         List<Coordinate> coordinates1A = new ArrayList<>();
-
-        // Area B locations need to be deliver
         List<Coordinate> coordinates1B = new ArrayList<>();
+        List<Coordinate> coordinates1C = new ArrayList<>();
+        List<Coordinate> coordinates1D = new ArrayList<>();
 
-        // C,D......
-
-        // Area A
         coordinates1A.add(new Coordinate(1.532302,110.357173));
         coordinates1A.add(new Coordinate(1.535546,110.358202));
         coordinates1A.add(new Coordinate(1.520725,110.354431));
 
-        // Area B
         coordinates1B.add(new Coordinate(1.532302,110.357173));
         coordinates1B.add(new Coordinate(1.526855,110.369588));
         coordinates1B.add(new Coordinate(1.511337,110.352239));
 
+        coordinates1C.add(new Coordinate(1.532302,110.357173));
+        coordinates1C.add(new Coordinate(1.588484,110.360216));
+        coordinates1C.add(new Coordinate(1.46668,110.425148));
+
+        coordinates1D.add(new Coordinate(1.532302,110.357173));
+        coordinates1D.add(new Coordinate(1.543655,110.338852));
+        coordinates1D.add(new Coordinate(1.550192,110.341737));
+
         area1A.add(coordinates1A);
         area1B.add(coordinates1B);
+        area1C.add(coordinates1C);
+        area1D.add(coordinates1D);
 
         map1.put("Area_A", area1A);
         map1.put("Area_B", area1B);
+        map1.put("Area_C", area1C);
+        map1.put("Area_D", area1D);
 
 
         // 2nd batch delivery (ABCD)

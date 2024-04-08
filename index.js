@@ -56,110 +56,163 @@ async function initMap()
 
     if (batch.hasOwnProperty('Area_A')) 
     {
-        var areaAData = batch['Area_A'];
+        var areaData = batch['Area_A'];
 
-        if (areaAData.length > 0) 
+        if (areaData.length > 0) 
         {
-            const coordinatesList = areaAData[0];
+            const coordinatesList = areaData[0];
             coordinatesList.forEach(coordinate => {
                 Area_A.push(coordinate);
             });
         }
-
-        // const jsonDataContainer = document.getElementById('jsonData');
-        // jsonDataContainer.textContent = JSON.stringify(Area_A, null, 2); debug
     }
 
     if (batch.hasOwnProperty('Area_B')) 
     {
-        var areaAData = batch['Area_B'];
+        var areaData = batch['Area_B'];
 
-        if (areaAData.length > 0) 
+        if (areaData.length > 0) 
         {
-            const coordinatesList = areaAData[0];
+            const coordinatesList = areaData[0];
             coordinatesList.forEach(coordinate => {
                 Area_B.push(coordinate);
             });
         }
-
-        // const jsonDataContainer = document.getElementById('jsonData');
-        // jsonDataContainer.textContent = JSON.stringify(Area_B, null, 2); debug
     }
 
-    // CD
+    if (batch.hasOwnProperty('Area_C')) 
+    {
+        var areaData = batch['Area_C'];
 
-    var markerLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        if (areaData.length > 0) 
+        {
+            const coordinatesList = areaData[0];
+            coordinatesList.forEach(coordinate => {
+                Area_C.push(coordinate);
+            });
+        }
+        // const jsonDataContainer = document.getElementById('jsonData');
+        // jsonDataContainer.textContent = JSON.stringify(Area_C, null, 2);
+    }
+    
+    if (batch.hasOwnProperty('Area_D')) 
+    {
+        var areaData = batch['Area_D'];
+
+        if (areaData.length > 0) 
+        {
+            const coordinatesList = areaData[0];
+            coordinatesList.forEach(coordinate => {
+                Area_D.push(coordinate);
+            });
+        }
+    }
     
     function calculateRoute(index) 
     {
-        if (index >= Area_A.length - 1) 
-        {
-            return;
-        }
-
-        if (index >= Area_B.length - 1) 
-        {
-            return;
-        }
-        
-        // Create a DirectionsRenderer object and setting
-        var directionsRenderer = new google.maps.DirectionsRenderer
-        ({
-            suppressMarkers: true,
-            polylineOptions: {
-                strokeColor: '#D862BC'
-            }
-        });
-
-        // Marker setting
-        new google.maps.Marker({
-            position: Area_A[index],
-            map: map,
-            label: markerLetters[index % markerLetters.length]
-        });
-
-        new google.maps.Marker({
-            position: Area_A[index + 1],
-            map: map,
-            label: markerLetters[(index + 1) % markerLetters.length]
-        });
-
-        // Marker setting
-        new google.maps.Marker({
-            position: Area_B[index],
-            map: map,
-            label: markerLetters[index % markerLetters.length]
-        });
-
-        new google.maps.Marker({
-            position: Area_B[index + 1],
-            map: map,
-            label: markerLetters[(index + 1) % markerLetters.length]
-        });
-
-        // Apply the render related stuff to map
-        directionsRenderer.setMap(map);
-        
+        // Array to hold all DirectionsRenderer objects
+        var directionsRenderers = [];
+    
         // Create a DirectionsService object.
         var directionsService = new google.maps.DirectionsService();
-        
-        var request = 
-        {
-            origin: Area_A[index],
-            destination: Area_A[index + 1],
-            origin: Area_B[index],
-            destination: Area_B[index + 1],
-            travelMode: google.maps.TravelMode.DRIVING
-        };
     
-        directionsService.route(request, function(response, status) 
+        // Define marker letters
+        var markerLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
+        // Function to render route and markers for an area
+        function renderRouteAndMarkers(area, index, color) 
         {
-            if (status == google.maps.DirectionsStatus.OK) 
-            {
-                directionsRenderer.setDirections(response);
+            if (index >= area.length - 1) {
+                return;
             }
-            calculateRoute(index + 1);
-        });
+    
+            // Marker setting
+            var marker = new google.maps.Marker({
+                position: area[index],
+                map: map,
+                label: markerLetters[index % markerLetters.length],
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    fillColor: color,
+                    fillOpacity: 1,
+                    strokeColor: '#000',
+                    strokeWeight: 1,
+                    scale: 10
+                }
+            });
+    
+            var nextMarker = new google.maps.Marker({
+                position: area[index + 1],
+                map: map,
+                label: markerLetters[(index + 1) % markerLetters.length],
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    fillColor: color,
+                    fillOpacity: 1,
+                    strokeColor: '#000',
+                    strokeWeight: 1,
+                    scale: 10
+                }
+            });
+    
+            var directionsRenderer = new google.maps.DirectionsRenderer({
+                suppressMarkers: true,
+                polylineOptions: {
+                    strokeColor: color
+                }
+            });
+    
+            directionsRenderer.setMap(map);
+    
+            var request = 
+            {
+                origin: area[index],
+                destination: area[index + 1],
+                travelMode: google.maps.TravelMode.DRIVING
+            };
+    
+            directionsService.route(request, function(response, status) {
+                if (status == google.maps.DirectionsStatus.OK) 
+                {
+                    directionsRenderer.setDirections(response);
+                }
+            });
+    
+            // Add the DirectionsRenderer object to the array
+            directionsRenderers.push(directionsRenderer);
+    
+            // Render next route and markers
+            renderRouteAndMarkers(area, index + 1, color);
+        }
+    
+        // Render routes and markers for each area with different colors
+        renderRouteAndMarkers(Area_A, index, '#3366FF'); // Blue
+        renderRouteAndMarkers(Area_B, index, '#FF3333'); // Red
+        renderRouteAndMarkers(Area_C, index, '#DC6B19'); // Orange
+        renderRouteAndMarkers(Area_D, index, '#D862BC'); // Purple
+    
+        // Function to check if all routes have been rendered
+        function checkAllRoutesRendered() 
+        {
+            for (var i = 0; i < directionsRenderers.length; i++) 
+            {
+                if (!directionsRenderers[i].getDirections()) 
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    
+        // Check if all routes have been rendered
+        var checkInterval = setInterval(function() 
+        {
+            if (checkAllRoutesRendered()) 
+            {
+                clearInterval(checkInterval);
+                // All routes have been rendered, do something if needed
+            }
+        }, 100);
     }
     
     calculateRoute(0);
