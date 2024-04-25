@@ -18,7 +18,7 @@ public class TransferServer extends NanoHTTPD
     @Override
     public Response serve(IHTTPSession session) 
     {
-        // Test data, algrorithm should format the data like this
+        // Test data, DAs should format the data like this
 
         // Json list
         List<Map<String, List<List<Coordinate>>>> dataList = new ArrayList<>();
