@@ -228,5 +228,5 @@ async function initMap()
 //     const currentBatch = batches[currentIndex];
 //     console.log('Current Batch:', currentBatch);
 
-//     // 在這裡你可以做任何其他你想做的事情，例如更新介面或處理數據等等
+//     
 // });
