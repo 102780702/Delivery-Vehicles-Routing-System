@@ -1,6 +1,5 @@
 # Delivery-Vehicles-Routing-System
-upload your files here, there is a "add file" button at top right
-
+**ignore AgentWithArgument
 06-04 - readTXT.java: able to read txt file
 
 06-04 - gui.html + index.js: able to render point to point on the map
