@@ -16,8 +16,6 @@ fetch('http://localhost:8080')
                     areaData.forEach(coordinates => {
                         let coordinateList = [];
                         coordinates.forEach(coordinate => {
-                            // const jsonDataContainer = document.getElementById('jsonData');
-                            // jsonDataContainer.textContent = JSON.stringify(coordinate.longitude, null, 2); debug
                             let coord = {lat: coordinate.latitude, lng: coordinate.longitude};
                             coordinateList.push(coord);
                         });
@@ -184,7 +182,7 @@ async function initMap()
             // Render next route and markers
             renderRouteAndMarkers(area, index + 1, color);
         }
-    
+
         // Render routes and markers for each area with different colors
         renderRouteAndMarkers(Area_A, index, '#3366FF'); // Blue
         renderRouteAndMarkers(Area_B, index, '#FF3333'); // Red
@@ -230,5 +228,5 @@ async function initMap()
 //     const currentBatch = batches[currentIndex];
 //     console.log('Current Batch:', currentBatch);
 
-//     // 在這裡你可以做任何其他你想做的事情，例如更新介面或處理數據等等
+//     
 // });

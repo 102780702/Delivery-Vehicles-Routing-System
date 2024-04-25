@@ -1,27 +1,30 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class readTXT 
 {
     public static void main(String[] args) 
     {
         String fileName = "coordinates.txt";
-        List<Coordinate> coordinates = readCoordinatesFromFile(fileName);
+        Map<Coordinate, CoordinateInfo> coordinateInfoMap = readCoordinatesFromFile(fileName);
 
-        // print out coordinates in terminal
-        for (Coordinate coordinate : coordinates) 
+        // print out coordinates and info in terminal
+        for (Map.Entry<Coordinate, CoordinateInfo> entry : coordinateInfoMap.entrySet()) 
         {
-            System.out.println(coordinate);
+            System.out.println("Coordinate: " + entry.getKey());
+            System.out.println("Capacity: " + entry.getValue().getCapacity());
+            System.out.println("Weight: " + entry.getValue().getWeight());
+            System.out.println();
         }
     }
 
     // read file function
-    public static List<Coordinate> readCoordinatesFromFile(String fileName) 
+    public static Map<Coordinate, CoordinateInfo> readCoordinatesFromFile(String fileName) 
     {
-        List<Coordinate> coordinates = new ArrayList<>();
+        Map<Coordinate, CoordinateInfo> coordinateInfoMap = new HashMap<>();
         BufferedReader reader;
         try 
         {
@@ -30,15 +33,19 @@ public class readTXT
             while (line != null) 
             {
                 String[] parts = line.split(",");
-                if (parts.length == 2) 
+                if (parts.length == 4) 
                 {
                     double latitude = Double.parseDouble(parts[0]);
                     double longitude = Double.parseDouble(parts[1]);
-                    coordinates.add(new Coordinate(latitude, longitude));
+                    int capacity = Integer.parseInt(parts[2]);
+                    int weight = Integer.parseInt(parts[3]);
+                    Coordinate coordinate = new Coordinate(latitude, longitude);
+                    CoordinateInfo coordinateInfo = new CoordinateInfo(capacity, weight);
+                    coordinateInfoMap.put(coordinate, coordinateInfo);
                 } 
                 else 
                 {
-                    System.err.println("Invalid coordinate format: " + line);
+                    System.err.println("Invalid format: " + line);
                 }
                 line = reader.readLine();
             }
@@ -48,6 +55,6 @@ public class readTXT
         {
             e.printStackTrace();
         }
-        return coordinates;
+        return coordinateInfoMap;
     }
 }
