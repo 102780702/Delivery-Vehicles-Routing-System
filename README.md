@@ -10,3 +10,6 @@ upload your files here, there is a "add file" button at top right
 07-04 - optimize data transfer function, multi area render available (prototype)
 
 08-04 - Optimize & debug multi area render function
+
+25-04 - txt file: capacity and weight added
+
