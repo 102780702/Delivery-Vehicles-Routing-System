@@ -14,61 +14,60 @@ public class readTXT
         Map<Coordinate, CoordinateInfo> coordinateInfoMap = readCoordinatesFromFile(fileName);
 
         // print out coordinates and info in terminal
-        for (Map.Entry<Coordinate, CoordinateInfo> entry : coordinateInfoMap.entrySet()) 
-        {
-            System.out.println("Coordinate: " + entry.getKey());
-            System.out.println("Capacity: " + entry.getValue().getCapacity());
-            System.out.println("Weight: " + entry.getValue().getWeight());
-            System.out.println();
-        }
+        // for (Map.Entry<Coordinate, CoordinateInfo> entry : coordinateInfoMap.entrySet()) 
+        // {
+        //     System.out.println("Coordinate: " + entry.getKey());
+        //     System.out.println("Capacity: " + entry.getValue().getCapacity());
+        //     System.out.println("Weight: " + entry.getValue().getWeight());
+        //     System.out.println();
+        // }
 
-        List<Coordinate> coordinateList = new ArrayList<>(coordinateInfoMap.keySet());
-        List<Coordinate> areaA = new ArrayList<>();
-        List<Coordinate> areaB = new ArrayList<>();
-        List<Coordinate> areaC = new ArrayList<>();
-        List<Coordinate> areaD = new ArrayList<>();
+        Map<Coordinate, CoordinateInfo> areaA = new HashMap<>();
+        Map<Coordinate, CoordinateInfo> areaB = new HashMap<>();
+        Map<Coordinate, CoordinateInfo> areaC = new HashMap<>();
+        Map<Coordinate, CoordinateInfo> areaD = new HashMap<>();
 
-    
         Coordinate centerWarehouse = new Coordinate(1.532302, 110.357173);
 
-        for (Coordinate coordinate : coordinateList) 
+        for (Map.Entry<Coordinate, CoordinateInfo> entry : coordinateInfoMap.entrySet())
         {
-            if(coordinate.getLatitude() > centerWarehouse.getLatitude() && coordinate.getLongitude() < centerWarehouse.getLongitude())
+            if(entry.getKey().getLatitude() > centerWarehouse.getLatitude() && entry.getKey().getLongitude() < centerWarehouse.getLongitude())
             {
-                areaA.add(coordinate);
+                areaA.put(entry.getKey(), entry.getValue());
             }
-            else if(coordinate.getLatitude() > centerWarehouse.getLatitude() && coordinate.getLongitude() > centerWarehouse.getLongitude())
+            else if(entry.getKey().getLatitude() > centerWarehouse.getLatitude() && entry.getKey().getLongitude() > centerWarehouse.getLongitude())
             {
-                areaB.add(coordinate);
+                areaB.put(entry.getKey(), entry.getValue());
             }
-            else if(coordinate.getLatitude() < centerWarehouse.getLatitude() && coordinate.getLongitude() < centerWarehouse.getLongitude())
+            else if(entry.getKey().getLatitude() < centerWarehouse.getLatitude() && entry.getKey().getLongitude() < centerWarehouse.getLongitude())
             {
-                areaC.add(coordinate);
+                areaC.put(entry.getKey(), entry.getValue());
             }
-            else if(coordinate.getLatitude() < centerWarehouse.getLatitude() && coordinate.getLongitude() > centerWarehouse.getLongitude())
+            else if(entry.getKey().getLatitude() < centerWarehouse.getLatitude() && entry.getKey().getLongitude() > centerWarehouse.getLongitude())
             {
-                areaD.add(coordinate);
+                areaD.put(entry.getKey(), entry.getValue());
             }
         }
-
-        System.out.println("Area A:");
-        for (Coordinate coordinate : areaA) {
-            System.out.println("Latitude: " + coordinate.getLatitude() + ", Longitude: " + coordinate.getLongitude());
+        
+        for (Map.Entry<Coordinate, CoordinateInfo> entry : areaA.entrySet()) {
+            Coordinate coordinate = entry.getKey();
+            CoordinateInfo info = entry.getValue();
+            System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
         }
-
-        System.out.println("Area B:");
-        for (Coordinate coordinate : areaB) {
-            System.out.println("Latitude: " + coordinate.getLatitude() + ", Longitude: " + coordinate.getLongitude());
+        for (Map.Entry<Coordinate, CoordinateInfo> entry : areaB.entrySet()) {
+            Coordinate coordinate = entry.getKey();
+            CoordinateInfo info = entry.getValue();
+            System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
         }
-
-        System.out.println("Area C:");
-        for (Coordinate coordinate : areaC) {
-            System.out.println("Latitude: " + coordinate.getLatitude() + ", Longitude: " + coordinate.getLongitude());
+        for (Map.Entry<Coordinate, CoordinateInfo> entry : areaC.entrySet()) {
+            Coordinate coordinate = entry.getKey();
+            CoordinateInfo info = entry.getValue();
+            System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
         }
-
-        System.out.println("Area D:");
-        for (Coordinate coordinate : areaD) {
-            System.out.println("Latitude: " + coordinate.getLatitude() + ", Longitude: " + coordinate.getLongitude());
+        for (Map.Entry<Coordinate, CoordinateInfo> entry : areaD.entrySet()) {
+            Coordinate coordinate = entry.getKey();
+            CoordinateInfo info = entry.getValue();
+            System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
         }
     }
 
