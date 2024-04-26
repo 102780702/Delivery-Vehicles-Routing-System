@@ -3,19 +3,3 @@
 
 **Communication Diagram**
 ![image](https://github.com/102780702/Delivery-Vehicles-Routing-System/assets/145240138/716b8078-608f-4219-baab-b60313813ee0)
-
-
-**Update Log**
-
-06-04 - readTXT.java: able to read txt file
-
-06-04 - gui.html + index.js: able to render point to point on the map
-
-06-04 - TransferServer.java + index.js + gui.html: data from back to front (java->javascript->html)
-
-07-04 - optimize data transfer function, multi area render available (prototype)
-
-08-04 - Optimize & debug multi area render function
-
-25-04 - txt file: capacity and weight added
-
