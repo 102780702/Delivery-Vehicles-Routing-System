@@ -49,26 +49,39 @@ public class readTXT
             }
         }
         
-        for (Map.Entry<Coordinate, CoordinateInfo> entry : areaA.entrySet()) {
-            Coordinate coordinate = entry.getKey();
-            CoordinateInfo info = entry.getValue();
+        areaA.forEach((coordinate, info) -> {
             System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
-        }
-        for (Map.Entry<Coordinate, CoordinateInfo> entry : areaB.entrySet()) {
-            Coordinate coordinate = entry.getKey();
-            CoordinateInfo info = entry.getValue();
+        });
+        areaB.forEach((coordinate, info) -> {
             System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
-        }
-        for (Map.Entry<Coordinate, CoordinateInfo> entry : areaC.entrySet()) {
-            Coordinate coordinate = entry.getKey();
-            CoordinateInfo info = entry.getValue();
+        });
+        areaC.forEach((coordinate, info) -> {
             System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
-        }
-        for (Map.Entry<Coordinate, CoordinateInfo> entry : areaD.entrySet()) {
-            Coordinate coordinate = entry.getKey();
-            CoordinateInfo info = entry.getValue();
+        });
+        areaD.forEach((coordinate, info) -> {
             System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
-        }
+        });
+
+        // for (Map.Entry<Coordinate, CoordinateInfo> entry : areaA.entrySet()) {
+        //     Coordinate coordinate = entry.getKey();
+        //     CoordinateInfo info = entry.getValue();
+        //     System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
+        // }
+        // for (Map.Entry<Coordinate, CoordinateInfo> entry : areaB.entrySet()) {
+        //     Coordinate coordinate = entry.getKey();
+        //     CoordinateInfo info = entry.getValue();
+        //     System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
+        // }
+        // for (Map.Entry<Coordinate, CoordinateInfo> entry : areaC.entrySet()) {
+        //     Coordinate coordinate = entry.getKey();
+        //     CoordinateInfo info = entry.getValue();
+        //     System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
+        // }
+        // for (Map.Entry<Coordinate, CoordinateInfo> entry : areaD.entrySet()) {
+        //     Coordinate coordinate = entry.getKey();
+        //     CoordinateInfo info = entry.getValue();
+        //     System.out.println("Coordinate: " + coordinate + ", Capacity: " + info.getCapacity() + ", Weight: " + info.getWeight());
+        // }
     }
 
     // read file function
