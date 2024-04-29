@@ -1,7 +1,9 @@
 {
+    "java.project.sourcePaths": ["src"],
+    "java.project.outputPath": "bin",
     "java.project.referencedLibraries": [
-        "C:/Users/junsi/GitHub/Delivery-Vehicles-Routing-System/jade.jar",
-        "C:/Users/junsi/GitHub/Delivery-Vehicles-Routing-System/gson.jar",
-        "C:/Users/junsi/GitHub/Delivery-Vehicles-Routing-System/nanohttpd.jar"
+        "lib/**/*.jar",
+        "c:\\Users\\julia\\OneDrive\\Documents\\COS30018 Intelligent systems\\JADE-all-4.5.0\\JADE-bin-4.5.0\\jade\\lib\\jade.jar",
+        "c:\\Users\\julia\\OneDrive\\Documents\\COS30018 Intelligent systems\\JADE-all-4.5.0\\JADE-examples-4.5.0\\jade\\lib\\jadeExamples.jar"
     ]
 }
