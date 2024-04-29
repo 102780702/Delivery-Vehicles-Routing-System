@@ -8,6 +8,7 @@ https://stackabuse.com/traveling-salesman-problem-with-genetic-algorithms-in-jav
 import java.util.*;
 
 public class Main {
+
     public static void printTravelPrices(int[][] travelPrices, int numberOfCities){
         for(int i = 0; i<numberOfCities; i++){
             for(int j=0; j<numberOfCities; j++){
