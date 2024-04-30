@@ -20,8 +20,8 @@ public class readTXT
         double a = Math.pow(Math.sin(dlat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dlon / 2), 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         
-        // earth radius
-        double radius = 6371;
+        // earth radius in meters
+        double radius = 6371000; // 6371 km converted to meters
         
         return (int) Math.round(radius * c);
     }
@@ -41,6 +41,20 @@ public class readTXT
         }
         
         return distances;
+    }
+
+    public static void printDistanceReference(List<Coordinate> locations, List<Integer> distances) {
+        int n = locations.size();
+        int index = 0;
+        
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                Coordinate loc1 = locations.get(i);
+                Coordinate loc2 = locations.get(j);
+                System.out.println("[ " +loc1.getLatitude() + ", " + loc1.getLongitude() + " ] and [" +loc2.getLatitude() + ", " + loc2.getLongitude() + "]: " + distances.get(index).toString() + "m");
+                index++;
+            }
+        }
     }
 
     public static void printTravelPrices(int[][] travelPrices, int numberOfCoordinates){
@@ -71,51 +85,43 @@ public class readTXT
         // }
 
         List<Coordinate> coordinateList = new ArrayList<>(coordinateInfoMap.keySet());
-        int midpoint = coordinateList.size() / 4;
-        List<Coordinate> firstHalf = coordinateList.subList(0, midpoint);
         Coordinate centerWarehouse = new Coordinate(1.532302, 110.357173);
-        firstHalf.add(0, centerWarehouse);
+        coordinateList.add(0, centerWarehouse);
         
         // for (Coordinate coordinate : coordinateList) {
         //     System.out.println("Coordinate: " + coordinate.getLatitude());
         // }
 
-        List<Integer> distances = calculateDistances(firstHalf);
+        List<Integer> distances = calculateDistances(coordinateList);
+        printDistanceReference(coordinateList, distances);
 
-        int count = 1;
-        for (int distance : distances) {
-            System.out.println("Distance " + count + ": " + distance + " km");
-            count++;
-        }
+        // int count = 1;
+        // for (int distance : distances) {
+        //     System.out.println("Distance " + count + ": " + distance + " km");
+        //     count++;
+        // }
 
-        int numberOfCoordinates = distances.size();
+        int numberOfCoordinates = coordinateList.size();
         int[][] travelPrices = new int[numberOfCoordinates][numberOfCoordinates];
+        int index = 0;
 
         for (int i = 0; i < numberOfCoordinates; i++) {
-            for (int j = 0; j <= i; j++) {
-                System.out.println("i: " + i + ", j: " + j);
-                int index = i * numberOfCoordinates + j; // this got problem
-                System.out.println("Index: " + index);
-                if (i == j) {
-                    travelPrices[i][j] = 0;
-                } else {
-                    travelPrices[i][j] = distances.get(index);
-                    // travelPrices[j][i] = travelPrices[i][j];
+            for (int j = 0; j < numberOfCoordinates; j++) {
+                if (i != j) {
+                    if (travelPrices[i][j] == 0) {
+                        travelPrices[i][j] = distances.get(index);
+                        travelPrices[j][i] = travelPrices[i][j];
+                        index ++;
+                    }
                 }
             }
         }
 
-        // for (int i = 0; i < numberOfCoordinates; i++) {
-        //     for (int j = 0; j < numberOfCoordinates; j++) {
-        //         if (i == j) {
-        //             travelPrices[i][j] = 0;
-        //         } else {
-        //             travelPrices[i][j] = distances.get(i * numberOfCoordinates + j);
-        //         }
-        //     }
-        // }
-
         printTravelPrices(travelPrices,numberOfCoordinates);
+
+        UberSalesmensch geneticAlgorithm = new UberSalesmensch(numberOfCoordinates, SelectionType.ROULETTE, travelPrices, 0, 0);
+        SalesmanGenome result = geneticAlgorithm.optimize();
+        System.out.println(result);
 
         // Map<Coordinate, CoordinateInfo> areaA = new HashMap<>();
         // Map<Coordinate, CoordinateInfo> areaB = new HashMap<>();
