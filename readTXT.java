@@ -70,6 +70,20 @@ public class readTXT
         }
     }
 
+    public static List<Integer> convertSalesmanGenomeToIntList(SalesmanGenome genome) {
+        List<Integer> integerSequence = new ArrayList<>();
+        
+        integerSequence.add(genome.getStartingCity());
+        
+        for (int gene : genome.getGenome()) {
+            integerSequence.add(gene);
+        }
+        
+        integerSequence.add(genome.getStartingCity());
+        
+        return integerSequence;
+    }
+
     public static void main(String[] args) 
     {
         String fileName = "coordinates.txt";
@@ -117,11 +131,19 @@ public class readTXT
             }
         }
 
-        printTravelPrices(travelPrices,numberOfCoordinates);
+        printTravelPrices(travelPrices,numberOfCoordinates); // print matrix
 
         UberSalesmensch geneticAlgorithm = new UberSalesmensch(numberOfCoordinates, SelectionType.ROULETTE, travelPrices, 0, 0);
         SalesmanGenome result = geneticAlgorithm.optimize();
         System.out.println(result);
+        List<Integer> resultList = convertSalesmanGenomeToIntList(result);
+        System.out.println(resultList);
+
+        List<Coordinate> shortestPath = new ArrayList<>();        ;
+
+        for (int i: resultList) {
+            shortestPath.add(coordinateList.get(i));
+        }
 
         // Map<Coordinate, CoordinateInfo> areaA = new HashMap<>();
         // Map<Coordinate, CoordinateInfo> areaB = new HashMap<>();
