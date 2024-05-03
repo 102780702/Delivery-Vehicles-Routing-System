@@ -71,8 +71,8 @@ public class SalesmanGenome implements Comparable {
         }
         sb.append(" ");
         sb.append(startingCity);
-        // sb.append("\nLength: ");
-        // sb.append(this.fitness);
+        sb.append("\nLength: ");
+        sb.append(this.fitness);
         return sb.toString();
     }
 

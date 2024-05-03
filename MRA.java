@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.HashSet;
 import java.util.List;
 
@@ -130,6 +131,7 @@ public class MRA extends Agent {
                     }
 
                     // Method that is invoked when notifications have been received from all responders
+                    // expected, but run the above one 
                     protected void handleAllResultNotifications(jade.util.leap.List notifications) {
                         System.out.println("MRA: Received responses from all responders.");
 
@@ -179,6 +181,7 @@ public class MRA extends Agent {
                         // 20 marks ???
                         // weight not yet implement
                         // assign delivery address to each area, make sure not exceed agent capacity
+                        int taken = 0;
                         for (Map.Entry<AID, Map<Coordinate, CoordinateInfo>> entry : coordinateInfoMaps.entrySet()) {
                             AID agentId = entry.getKey();
                             Map<Coordinate, CoordinateInfo> area = entry.getValue();
@@ -186,13 +189,14 @@ public class MRA extends Agent {
                             Integer agentCapacity = daCapacities.get(agentId);
                             
                             int tempTotalCapacity = 0;
-                            for (Map.Entry<Coordinate, CoordinateInfo> coordinateEntry : area.entrySet()) {
+                            for (Map.Entry<Coordinate, CoordinateInfo> coordinateEntry : area.entrySet().stream().skip(taken).collect(Collectors.toList())) {
                                 Coordinate coordinate = coordinateEntry.getKey();
                                 CoordinateInfo coordinateInfo = coordinateEntry.getValue();
                                 
                                 if (tempTotalCapacity + coordinateInfo.getCapacity() <= agentCapacity) {
                                     tempTotalCapacity += coordinateInfo.getCapacity();
                                     entry.getValue().put(coordinate, coordinateInfo);
+                                    taken++;
                                 } else {
                                     break;
                                 }
@@ -271,7 +275,7 @@ public class MRA extends Agent {
 
             // Inform DA about the route
             ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-            msg.addReceiver(daAgent);
+            msg.addReceiver(daAgent); // instead of sent all route to all DA at once, sent the route one by one
             msg.setContent(route);
             send(msg);
             System.out.println("MRA: Informed " + daAgent.getName() + " about the route: " + route);
