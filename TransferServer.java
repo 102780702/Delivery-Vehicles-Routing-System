@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,9 +11,41 @@ import java.io.IOException;
 
 public class TransferServer extends NanoHTTPD 
 {
+    List<String> keyNames = Arrays.asList("Area_A", "Area_B", "Area_C", "Area_D");
+
+    // Json list
+    List<Map<String, List<List<Coordinate>>>> dataList = new ArrayList<>();
+
+    // 1st batch delivery (ABCD)
+    Map<String, List<List<Coordinate>>> map1 = new HashMap<>();
+    List<List<Coordinate>> area1A = new ArrayList<>();
+    List<List<Coordinate>> area1B = new ArrayList<>();
+    List<List<Coordinate>> area1C = new ArrayList<>();
+    List<List<Coordinate>> area1D = new ArrayList<>();
+    List<List<List<Coordinate>>> areas = new ArrayList<>();
+
+    Map<String, List<List<Coordinate>>> map2 = new HashMap<>();
+
     public TransferServer(int port) 
     {
         super(port);
+    }
+
+    public void passDataToServer(List<List<Coordinate>> batchesOdShortestPath) 
+    {
+        areas.add(area1A);
+        areas.add(area1B);
+        areas.add(area1C);
+        areas.add(area1D);
+
+        for (List<Coordinate> list : batchesOdShortestPath) {
+            for (List<List<Coordinate>> list2 : areas) {
+                if (list2.size() != 0) {
+                    list2.add(list);
+                    break;
+                }
+            }
+        }
     }
 
     @Override
@@ -20,47 +53,9 @@ public class TransferServer extends NanoHTTPD
     {
         // Test data, DAs should format the data like this
 
-        // Json list
-        List<Map<String, List<List<Coordinate>>>> dataList = new ArrayList<>();
-
-        // 1st batch delivery (ABCD)
-        Map<String, List<List<Coordinate>>> map1 = new HashMap<>(); // map
-
-        List<List<Coordinate>> area1A = new ArrayList<>();
-        List<List<Coordinate>> area1B = new ArrayList<>();
-        List<List<Coordinate>> area1C = new ArrayList<>();
-        List<List<Coordinate>> area1D = new ArrayList<>();
-        
-        List<Coordinate> coordinates1A = new ArrayList<>(); // DA1 delivery points
-        List<Coordinate> coordinates1B = new ArrayList<>(); // DA2 delivery points
-        List<Coordinate> coordinates1C = new ArrayList<>();
-        List<Coordinate> coordinates1D = new ArrayList<>();
-
-        coordinates1A.add(new Coordinate(1.532302,110.357173));
-        coordinates1A.add(new Coordinate(1.535546,110.358202));
-        coordinates1A.add(new Coordinate(1.520725,110.354431));
-
-        coordinates1B.add(new Coordinate(1.532302,110.357173));
-        coordinates1B.add(new Coordinate(1.526855,110.369588));
-        coordinates1B.add(new Coordinate(1.511337,110.352239));
-
-        coordinates1C.add(new Coordinate(1.532302,110.357173));
-        coordinates1C.add(new Coordinate(1.588484,110.360216));
-        coordinates1C.add(new Coordinate(1.46668,110.425148));
-
-        coordinates1D.add(new Coordinate(1.532302,110.357173));
-        coordinates1D.add(new Coordinate(1.543655,110.338852));
-        coordinates1D.add(new Coordinate(1.550192,110.341737));
-
-        area1A.add(coordinates1A);
-        area1B.add(coordinates1B);
-        area1C.add(coordinates1C);
-        area1D.add(coordinates1D);
-
-        map1.put("Area_A", area1A);
-        map1.put("Area_B", area1B);
-        map1.put("Area_C", area1C);
-        map1.put("Area_D", area1D);
+        for (int i = 0; i < areas.size(); i++) {
+            map1.put(keyNames.get(i), areas.get(i));
+        }
 
         // 2nd batch delivery (ABCD)
         //  Map<String, List<List<Coordinate>>> map2 = new HashMap<>();
