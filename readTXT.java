@@ -87,7 +87,7 @@ public class readTXT
     public static void main(String[] args) 
     {
         String fileName = "coordinates.txt";
-        Map<Coordinate, CoordinateInfo> coordinateInfoMap = readCoordinatesFromFile(fileName);
+        Map<Coordinate, Integer> coordinateInfoMap = readCoordinatesFromFile(fileName);
 
         // print out coordinates and info in terminal
         // for (Map.Entry<Coordinate, CoordinateInfo> entry : coordinateInfoMap.entrySet()) 
@@ -187,9 +187,9 @@ public class readTXT
     }
 
     // read file function
-    public static Map<Coordinate, CoordinateInfo> readCoordinatesFromFile(String fileName) 
+    public static Map<Coordinate, Integer> readCoordinatesFromFile(String fileName) 
     {
-        Map<Coordinate, CoordinateInfo> coordinateInfoMap = new HashMap<>();
+        Map<Coordinate, Integer> coordinateInfoMap = new HashMap<>();
         BufferedReader reader;
         try 
         {
@@ -198,15 +198,13 @@ public class readTXT
             while (line != null) 
             {
                 String[] parts = line.split(",");
-                if (parts.length == 4) 
+                if (parts.length == 3) 
                 {
                     double latitude = Double.parseDouble(parts[0]);
                     double longitude = Double.parseDouble(parts[1]);
                     int capacity = Integer.parseInt(parts[2]);
-                    int weight = Integer.parseInt(parts[3]);
                     Coordinate coordinate = new Coordinate(latitude, longitude);
-                    CoordinateInfo coordinateInfo = new CoordinateInfo(capacity, weight);
-                    coordinateInfoMap.put(coordinate, coordinateInfo);
+                    coordinateInfoMap.put(coordinate, capacity);
                 } 
                 else 
                 {

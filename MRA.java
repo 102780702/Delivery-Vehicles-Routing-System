@@ -19,9 +19,9 @@ import java.util.HashSet;
 import java.util.List;
 
 public class MRA extends Agent {
-    private Map<AID, Integer> daCapacities = new HashMap<>(); // weight ?
-    private Map<AID, Map<Coordinate, CoordinateInfo>> coordinateInfoMaps = new HashMap<>(); // DAs area
-    private Map<Coordinate, CoordinateInfo> coordinateInfoMap = new HashMap<>(); // file data
+    private Map<AID, Integer> daCapacities = new HashMap<>();
+    private Map<AID, List<Map<Coordinate, Integer>>> coordinateInfoMaps = new HashMap<>(); // DAs area
+    private Map<Coordinate, Integer> coordinateInfoMap = new HashMap<>(); // file data
     private Set<AID> requestSenders = new HashSet<>();
     private boolean triggered = false;
 
@@ -174,30 +174,34 @@ public class MRA extends Agent {
 
                         // according to DA's capacity seperate delivery coordinate
                         for (AID aid : daCapacities.keySet()) {
-                            Map<Coordinate, CoordinateInfo> map = new HashMap<>();
-                            coordinateInfoMaps.put(aid, map);
+                            List<Map<Coordinate, Integer>> listOfDeliveyLocation = new ArrayList<>();
+                            Map<Coordinate, Integer> map = new HashMap<>();
+                            listOfDeliveyLocation.add(map);
+                            coordinateInfoMaps.put(aid, listOfDeliveyLocation); // put empty map ready to store delivery areas
                         }
 
-                        // 20 marks ???
-                        // weight not yet implement
                         // assign delivery address to each area, make sure not exceed agent capacity
                         int taken = 0;
-                        for (Map.Entry<AID, Map<Coordinate, CoordinateInfo>> entry : coordinateInfoMaps.entrySet()) {
+                        for (Map.Entry<AID, List<Map<Coordinate, Integer>>> entry : coordinateInfoMaps.entrySet()) {
                             AID agentId = entry.getKey();
-                            Map<Coordinate, CoordinateInfo> area = entry.getValue();
                             
                             Integer agentCapacity = daCapacities.get(agentId);
                             
+                             // assigning items to DA
                             int tempTotalCapacity = 0;
-                            for (Map.Entry<Coordinate, CoordinateInfo> coordinateEntry : area.entrySet().stream().skip(taken).collect(Collectors.toList())) {
+                            for (Map.Entry<Coordinate, Integer> coordinateEntry : coordinateInfoMap.entrySet().stream().skip(taken).collect(Collectors.toList())) {
                                 Coordinate coordinate = coordinateEntry.getKey();
-                                CoordinateInfo coordinateInfo = coordinateEntry.getValue();
+                                Integer deliveryItemsCapacity = coordinateEntry.getValue();
                                 
-                                if (tempTotalCapacity + coordinateInfo.getCapacity() <= agentCapacity) {
-                                    tempTotalCapacity += coordinateInfo.getCapacity();
-                                    entry.getValue().put(coordinate, coordinateInfo);
+                                if (tempTotalCapacity + deliveryItemsCapacity <= agentCapacity) {
+                                    tempTotalCapacity += deliveryItemsCapacity;
+                                    List<Map<Coordinate, Integer>> tempList = entry.getValue();
+                                    Map<Coordinate, Integer> tempMap = new HashMap<>();
+                                    tempMap.put(coordinate, deliveryItemsCapacity);
+                                    tempList.add(tempMap);
                                     taken++;
-                                } else {
+                                } 
+                                else {
                                     break;
                                 }
                             }
@@ -214,7 +218,7 @@ public class MRA extends Agent {
     }
 
     // Method to generate route based on informed capacities and inform DAs
-    private void generateRoutes(Map<AID, Map<Coordinate, CoordinateInfo>> coordinateInfoMaps) {
+    private void generateRoutes(Map<AID, List<Map<Coordinate, Integer>>> coordinateInfoMaps) {
         // Dummy implementation for now
         // System.out.println("MRA: Generating routes based on informed capacities...");
         // for (Map.Entry<AID, Integer> entry : daCapacities.entrySet()) {
@@ -224,62 +228,70 @@ public class MRA extends Agent {
         //     // Here you can implement your logic to generate routes based on capacity
         //     String route = "Dummy route for " + daAgent.getName();
 
-        for (Map.Entry<AID, Map<Coordinate, CoordinateInfo>> entry : coordinateInfoMaps.entrySet()) {
+        for (Map.Entry<AID, List<Map<Coordinate, Integer>>> entry : coordinateInfoMaps.entrySet()) {
             AID agentId = entry.getKey();
-            Map<Coordinate, CoordinateInfo> area = entry.getValue();
-            List<Coordinate> coordinateList = new ArrayList<>();
+            List<Map<Coordinate, Integer>> areaList = entry.getValue();
 
             // Algrotrithm here
-            for (Map.Entry<Coordinate, CoordinateInfo> entry1 : area.entrySet()) {
-                Coordinate coordinate = entry1.getKey();
-                coordinateList.add(coordinate);
-            }
-            Coordinate centerWarehouse = new Coordinate(1.532302, 110.357173);
-            coordinateList.add(0, centerWarehouse);
+            for (Map<Coordinate, Integer> area: areaList) {
 
-            // function to calculate distance between each address
-            List<Integer> distances = calculateDistances(coordinateList);
-            printDistanceReference(coordinateList, distances); // print distance between address, can delete, for understanding and debug purpose
-            
-            // format distances data so algorithm can work
-            int numberOfCoordinates = coordinateList.size();
-            int[][] travelPrices = new int[numberOfCoordinates][numberOfCoordinates];
-            int index = 0;
-            for (int i = 0; i < numberOfCoordinates; i++) {
-                for (int j = 0; j < numberOfCoordinates; j++) {
-                    if (i != j) {
-                        if (travelPrices[i][j] == 0) {
-                            travelPrices[i][j] = distances.get(index);
-                            travelPrices[j][i] = travelPrices[i][j];
-                            index ++;
+                List<Coordinate> coordinateList = new ArrayList<>();
+                List<List<Coordinate>> listOfShortestPath = new ArrayList<>();
+
+                for (Map.Entry<Coordinate, Integer> entry1 : area.entrySet()) {
+                    Coordinate coordinate = entry1.getKey();
+                    coordinateList.add(coordinate);
+                }
+                Coordinate centerWarehouse = new Coordinate(1.532302, 110.357173);
+                coordinateList.add(0, centerWarehouse);
+    
+                // function to calculate distance between each address
+                List<Integer> distances = calculateDistances(coordinateList);
+                printDistanceReference(coordinateList, distances); // print distance between address, can delete, for understanding and debug purpose
+                
+                // format distances data so algorithm can work
+                int numberOfCoordinates = coordinateList.size();
+                int[][] travelPrices = new int[numberOfCoordinates][numberOfCoordinates];
+                int index = 0;
+                for (int i = 0; i < numberOfCoordinates; i++) {
+                    for (int j = 0; j < numberOfCoordinates; j++) {
+                        if (i != j) {
+                            if (travelPrices[i][j] == 0) {
+                                travelPrices[i][j] = distances.get(index);
+                                travelPrices[j][i] = travelPrices[i][j];
+                                index ++;
+                            }
                         }
                     }
                 }
+    
+                printTravelPrices(travelPrices,numberOfCoordinates); // print matrix, can delete, for understanding and debug purpose
+    
+                // algorithm functions
+                UberSalesmensch geneticAlgorithm = new UberSalesmensch(numberOfCoordinates, SelectionType.ROULETTE, travelPrices, 0, 0);
+                SalesmanGenome result = geneticAlgorithm.optimize();
+    
+                // print address index, can delete, for understanding and debug purpose
+                List<Integer> resultList = convertSalesmanGenomeToIntList(result);
+                System.out.println(resultList);
+    
+                // Store the shortest path into this list and ready to pass to DA
+                List<Coordinate> shortestPath = new ArrayList<>(); 
+                for (int i: resultList) {
+                    shortestPath.add(coordinateList.get(i));
+                }
+                
+                listOfShortestPath.add(shortestPath);
             }
 
-            printTravelPrices(travelPrices,numberOfCoordinates); // print matrix, can delete, for understanding and debug purpose
-
-            // algorithm functions
-            UberSalesmensch geneticAlgorithm = new UberSalesmensch(numberOfCoordinates, SelectionType.ROULETTE, travelPrices, 0, 0);
-            SalesmanGenome result = geneticAlgorithm.optimize();
-
-            // print address index, can delete, for understanding and debug purpose
-            List<Integer> resultList = convertSalesmanGenomeToIntList(result);
-            System.out.println(resultList);
-
-            // Store the shortest path into this list and ready to pass to DA
-            List<Coordinate> shortestPath = new ArrayList<>();        ;
-            for (int i: resultList) {
-                shortestPath.add(coordinateList.get(i));
-            }
-
-            // Inform DA about the route
+            // pass listOfShortestPath to DA, which mean da should hava a variable to store this, datatype: List<List<Coordinate>>
             ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-            msg.addReceiver(daAgent); // instead of sent all route to all DA at once, sent the route one by one
-            msg.setContent(route);
+            msg.addReceiver(agentId);
+            msg.setContent(listOfShortestPath); // something like this? need to convert to string ?
             send(msg);
-            System.out.println("MRA: Informed " + daAgent.getName() + " about the route: " + route);
+            System.out.println("MRA: Informed " + agentId.getName() + " about the route: " + listOfShortestPath); 
         }
+            
     }
 
     private static int calculateDistance(Coordinate loc1, Coordinate loc2) {
@@ -358,9 +370,9 @@ public class MRA extends Agent {
         return integerSequence;
     }
 
-    public static Map<Coordinate, CoordinateInfo> readCoordinatesFromFile(String fileName) 
+    public static Map<Coordinate, Integer> readCoordinatesFromFile(String fileName) 
     {
-        Map<Coordinate, CoordinateInfo> coordinateInfoMap = new HashMap<>();
+        Map<Coordinate, Integer> coordinateInfoMap = new HashMap<>();
         BufferedReader reader;
         try 
         {
@@ -369,15 +381,13 @@ public class MRA extends Agent {
             while (line != null) 
             {
                 String[] parts = line.split(",");
-                if (parts.length == 4) 
+                if (parts.length == 3) 
                 {
                     double latitude = Double.parseDouble(parts[0]);
                     double longitude = Double.parseDouble(parts[1]);
                     int capacity = Integer.parseInt(parts[2]);
-                    int weight = Integer.parseInt(parts[3]);
                     Coordinate coordinate = new Coordinate(latitude, longitude);
-                    CoordinateInfo coordinateInfo = new CoordinateInfo(capacity, weight);
-                    coordinateInfoMap.put(coordinate, coordinateInfo);
+                    coordinateInfoMap.put(coordinate, capacity);
                 } 
                 else 
                 {
