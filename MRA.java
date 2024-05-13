@@ -21,7 +21,7 @@ import java.util.List;
 public class MRA extends Agent {
     private Map<AID, Integer> daCapacities = new HashMap<>();
     private Map<AID, List<Map<Coordinate, Integer>>> coordinateInfoMaps = new HashMap<>(); // DAs area
-    private Map<Coordinate, Integer> coordinateInfoMap = new HashMap<>(); // file data
+    private Map<Coordinate, Integer> locationAndParcelNeedToBeDelivery = new HashMap<>(); // file data
     private Set<AID> requestSenders = new HashSet<>();
     private boolean triggered = false;
 
@@ -65,7 +65,7 @@ public class MRA extends Agent {
 
     	// Collect delivery data
         String fileName = "coordinates.txt";
-        coordinateInfoMap = readCoordinatesFromFile(fileName);
+        locationAndParcelNeedToBeDelivery = readCoordinatesFromFile(fileName);
 
         // Search for agents providing the "DeliveryAgent" service
         DFAgentDescription template = new DFAgentDescription();
@@ -189,7 +189,7 @@ public class MRA extends Agent {
                             
                              // assigning items to DA
                             int tempTotalCapacity = 0;
-                            for (Map.Entry<Coordinate, Integer> coordinateEntry : coordinateInfoMap.entrySet().stream().skip(taken).collect(Collectors.toList())) {
+                            for (Map.Entry<Coordinate, Integer> coordinateEntry : locationAndParcelNeedToBeDelivery.entrySet().stream().skip(taken).collect(Collectors.toList())) {
                                 Coordinate coordinate = coordinateEntry.getKey();
                                 Integer deliveryItemsCapacity = coordinateEntry.getValue();
                                 
@@ -230,6 +230,7 @@ public class MRA extends Agent {
 
         for (Map.Entry<AID, List<Map<Coordinate, Integer>>> entry : coordinateInfoMaps.entrySet()) {
             AID agentId = entry.getKey();
+
             List<Map<Coordinate, Integer>> areaList = entry.getValue();
 
             // Algrotrithm here

@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,16 +16,28 @@ public class TransferServer extends NanoHTTPD
 
     // Json list
     List<Map<String, List<List<Coordinate>>>> dataList = new ArrayList<>();
+    List<Map<String, List<Coordinate>>> listOfAreasAndItsShortestPath = new ArrayList<>();
 
-    // 1st batch delivery (ABCD)
-    Map<String, List<List<Coordinate>>> map1 = new HashMap<>();
-    List<List<Coordinate>> area1A = new ArrayList<>();
-    List<List<Coordinate>> area1B = new ArrayList<>();
-    List<List<Coordinate>> area1C = new ArrayList<>();
-    List<List<Coordinate>> area1D = new ArrayList<>();
-    List<List<List<Coordinate>>> areas = new ArrayList<>();
+    private void createNewMap() 
+    {
+        Map<String, List<Coordinate>> temp = new HashMap<>();
+        List<Coordinate> areaA = new ArrayList<>();
+        List<Coordinate> areaB = new ArrayList<>();
+        List<Coordinate> areaC = new ArrayList<>();
+        List<Coordinate> areaD = new ArrayList<>();
+        List<List<Coordinate>> areas = new ArrayList<>();
 
-    Map<String, List<List<Coordinate>>> map2 = new HashMap<>();
+        areas.add(areaA);
+        areas.add(areaB);
+        areas.add(areaC);
+        areas.add(areaD);
+        
+        for (int i = 0; i < areas.size(); i++ ) {
+            temp.put(keyNames.get(i), areas.get(i));
+        }
+        
+        listOfAreasAndItsShortestPath.add(temp);
+    }
 
     public TransferServer(int port) 
     {
@@ -33,17 +46,59 @@ public class TransferServer extends NanoHTTPD
 
     public void passDataToServer(List<List<Coordinate>> batchesOdShortestPath) 
     {
-        areas.add(area1A);
-        areas.add(area1B);
-        areas.add(area1C);
-        areas.add(area1D);
+        if(listOfAreasAndItsShortestPath.isEmpty()) 
+        {
+            createNewMap();
+        }
+        
+        int index = 0;
+        boolean inserted = false;
+        for (Map<String, List<Coordinate>> map : listOfAreasAndItsShortestPath) 
+        {
+            Collection<List<Coordinate>> allLists = map.values();
 
-        for (List<Coordinate> list : batchesOdShortestPath) {
-            for (List<List<Coordinate>> list2 : areas) {
-                if (list2.size() != 0) {
-                    list2.add(list);
-                    break;
+            boolean full = true;
+            List<Coordinate> tempList = new ArrayList<>();
+            for (List<Coordinate> list : allLists) 
+            {
+                if(list.isEmpty()) 
+                {
+                    if (inserted == true) 
+                    {
+                        full = true;
+                        break;
+                    }
+                    else 
+                    {
+                        full = false;
+                        tempList = list;
+                        break;
+                    }
                 }
+            }
+
+            if(full == false) 
+            {
+                if (batchesOdShortestPath.get(index) != null) 
+                {
+                    tempList.addAll(batchesOdShortestPath.get(index));
+                    index++;
+                    inserted = true;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < listOfAreasAndItsShortestPath.size(); i++) 
+                {
+                    if (i == listOfAreasAndItsShortestPath.size() - 1) 
+                    {
+                        if(map == listOfAreasAndItsShortestPath.get(i))
+                        {
+                            createNewMap();
+                        }
+                    }
+                }
+                inserted = false;
             }
         }
     }
@@ -53,9 +108,7 @@ public class TransferServer extends NanoHTTPD
     {
         // Test data, DAs should format the data like this
 
-        for (int i = 0; i < areas.size(); i++) {
-            map1.put(keyNames.get(i), areas.get(i));
-        }
+        
 
         // 2nd batch delivery (ABCD)
         //  Map<String, List<List<Coordinate>>> map2 = new HashMap<>();
@@ -85,11 +138,11 @@ public class TransferServer extends NanoHTTPD
         // map2.put("Area_B", area2B);
 
         // put batches into json list
-        dataList.add(map1);
+        // dataList.add(map1);
         // dataList.add(map2);
 
         Gson gson = new Gson();
-        String data = gson.toJson(dataList);
+        String data = gson.toJson(listOfAreasAndItsShortestPath);
 
         Response response = newFixedLengthResponse(Response.Status.OK, "application/json", data);
         response.addHeader("Access-Control-Allow-Origin", "*");
