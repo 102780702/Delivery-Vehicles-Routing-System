@@ -15,10 +15,10 @@ fetch('http://localhost:8080')
                     let area = [];
                     areaData.forEach(coordinates => {
                         let coordinateList = [];
-                        // coordinates.forEach(coordinate => {
+                        coordinates.forEach(coordinate => {
                             let coord = {lat: coordinate.latitude, lng: coordinate.longitude};
                             coordinateList.push(coord);
-                        //})
+                        })
                         area.push(coordinateList);
                     });
                         

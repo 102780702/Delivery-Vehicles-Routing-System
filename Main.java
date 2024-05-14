@@ -23,25 +23,32 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        int numberOfCities = 10;
-        int[][] travelPrices = new int[numberOfCities][numberOfCities];
-        for(int i = 0; i<numberOfCities; i++){
-            for(int j=0; j<=i; j++){
-                Random rand = new Random();
-                if(i==j)
-                    travelPrices[i][j] = 0;
-                else {
-                    travelPrices[i][j] = rand.nextInt(100);
-                    travelPrices[j][i] = travelPrices[i][j];
+        List<Integer> intList = new ArrayList<>();
+        int numberOfCities = 0;
+        intList.add(5);
+        intList.add(10);
+
+        for (Integer integer : intList) {
+            numberOfCities = integer;
+            int[][] travelPrices = new int[numberOfCities][numberOfCities];
+            for(int i = 0; i<numberOfCities; i++){
+                for(int j=0; j<=i; j++){
+                    Random rand = new Random();
+                    if(i==j)
+                        travelPrices[i][j] = 0;
+                    else {
+                        travelPrices[i][j] = rand.nextInt(100);
+                        travelPrices[j][i] = travelPrices[i][j];
+                    }
                 }
             }
+
+            printTravelPrices(travelPrices,numberOfCities);
+
+            UberSalesmensch geneticAlgorithm = new UberSalesmensch(numberOfCities, SelectionType.ROULETTE, travelPrices, 0, 0);
+            SalesmanGenome result = geneticAlgorithm.optimize();
+            System.out.println(result);
         }
-
-        printTravelPrices(travelPrices,numberOfCities);
-
-        UberSalesmensch geneticAlgorithm = new UberSalesmensch(numberOfCities, SelectionType.ROULETTE, travelPrices, 0, 0);
-        SalesmanGenome result = geneticAlgorithm.optimize();
-        System.out.println(result);
 
     }
 }

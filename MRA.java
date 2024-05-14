@@ -34,6 +34,7 @@ public class MRA extends Agent {
 
     private Map<Coordinate, Integer> fileData = new HashMap<>();
     Set<Coordinate> usedCoordinates = new HashSet<>(); // address that already taken by other DA
+    boolean gotParcel = true;
 
     protected void setup() {
     	
@@ -200,7 +201,7 @@ public class MRA extends Agent {
 
     
     private void startRouteGeneration() {
-        while (usedCoordinates.size() != fileData.size()) 
+        while (gotParcel == true) 
         {
             // Iterate over all entries in the daCapacities map
             for (Map.Entry<AID, String> entry : daCapacities.entrySet()) {
@@ -281,8 +282,14 @@ public class MRA extends Agent {
             for (AID daAgent : daCapacities.keySet()) {
                 routeRequestSent.put(daAgent, false);
             }
+            
+            if (usedCoordinates.size() != fileData.size()) {
+                gotParcel = true;
+            }
+            else {
+                gotParcel = false;
+            }
         }
-    	
     }
 
     
