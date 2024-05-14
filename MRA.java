@@ -110,8 +110,6 @@ public class MRA extends Agent {
         }
     }
 
-
-
     //Handle response from DA
     private class RequestInitiator extends AchieveREInitiator {
         public RequestInitiator(Agent a, ACLMessage msg) {
@@ -171,9 +169,6 @@ public class MRA extends Agent {
         System.out.println("MRA: Requested " + receiver.getLocalName() + " to request their route.");
     }
 
-
-    
-    
     // Listens for route request
     // Triggers initial route generation once all DAs have requested for route and informed capacity
     private class RouteRequestListener extends CyclicBehaviour {
