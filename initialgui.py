@@ -28,7 +28,7 @@ def on_dot_click(event, dot_id, coord):
     capacity = simpledialog.askinteger("Input", "Enter the capacity:", parent=root)
     if capacity is not None:  # Check if the user entered a value
         # Append the data to the file
-        with open("coordinates_capacity.txt", "a") as file:
+        with open("coordinates.txt", "a") as file:
             file.write(f"{coord[0]},{coord[1]},{capacity}\n")
         # Change the dot color to red
         canvas.itemconfig(dot_id, fill='red')
@@ -37,7 +37,7 @@ def reset_canvas():
     # Reset all dots to blue and clear the text file
     for dot in dot_ids:
         canvas.itemconfig(dot, fill='blue')
-    open("coordinates_capacity.txt", "w").close()  # Clear the content of the file
+    open("coordinates.txt", "w").close()  # Clear the content of the file
 
 def finalize():
     # Confirm and close the application
