@@ -12,6 +12,7 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -31,18 +33,15 @@ public class MRA extends Agent {
     private Set<AID> routerequestDAs = new HashSet<>();
     private boolean allResponsesReceived = false;
     private Map<AID, Boolean> routeRequestSent = new HashMap<>();
+    private Set<AID> availableDAs = new HashSet<>();
 
     private Map<Coordinate, Integer> fileData = new HashMap<>();
     Set<Coordinate> usedCoordinates = new HashSet<>(); // address that already taken by other DA
-    boolean gotParcel = true;
 
     protected void setup() {
     	
         resetState();
 
-        // read txt file
-        String fileName = "coordinates.txt";
-        fileData = readCoordinatesFromFile(fileName);
 
         // Register the MRA agent with the DF service
         DFAgentDescription dfd = new DFAgentDescription();
@@ -111,6 +110,8 @@ public class MRA extends Agent {
         }
     }
 
+
+
     //Handle response from DA
     private class RequestInitiator extends AchieveREInitiator {
         public RequestInitiator(Agent a, ACLMessage msg) {
@@ -140,7 +141,8 @@ public class MRA extends Agent {
             MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
             ACLMessage msg = receive(mt);
             if (msg != null) {
-                if (!msg.getConversationId().equals("route-request")) {
+            	System.out.println(msg.getConversationId());
+                if (!msg.getConversationId().equals("route-request") && !msg.getConversationId().equals("task-completed")) {
                     processCapacityMessage(msg);
                     if (!routeRequestSent.containsKey(msg.getSender()) || !routeRequestSent.get(msg.getSender())) {
                         sendRouteRequest(msg.getSender());
@@ -170,6 +172,9 @@ public class MRA extends Agent {
         System.out.println("MRA: Requested " + receiver.getLocalName() + " to request their route.");
     }
 
+
+    
+    
     // Listens for route request
     // Triggers initial route generation once all DAs have requested for route and informed capacity
     private class RouteRequestListener extends CyclicBehaviour {
@@ -187,6 +192,7 @@ public class MRA extends Agent {
             if (request != null) {
                 System.out.println("MRA: Received route request from " + request.getSender().getName());
                 routerequestDAs.add(request.getSender());
+                availableDAs.add(request.getSender());
 
                 // Check if all DAs have sent a request
                 if (routerequestDAs.equals(daCapacities.keySet())) {
@@ -198,28 +204,50 @@ public class MRA extends Agent {
             }
         }
     }
+    
+    private class TaskCompletionListener extends CyclicBehaviour {
+        public TaskCompletionListener(Agent a) {
+            super(a);
+        }
+
+        public void action() {
+            MessageTemplate mt = MessageTemplate.and(
+                MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+                MessageTemplate.MatchConversationId("task-completed")
+            );
+
+            ACLMessage inform = myAgent.receive(mt);
+            if (inform != null) {
+                System.out.println("MRA: Received task completion from " + inform.getSender().getName());
+                availableDAs.add(inform.getSender());  // Add back the DA as available once the task is completed
+            } else {
+                block();
+            }
+        }
+    }
 
     
     private void startRouteGeneration() {
-        while (gotParcel == true) 
+    	
+    	Map<Coordinate, Integer> fileData = new HashMap<>();
+        String fileName = "C:\\Users\\user\\eclipse-workspace\\Assignment\\src\\cos30018\\assign\\coordinates.txt";
+        fileData = readCoordinatesFromFile(fileName);
+        while (usedCoordinates.size() != fileData.size()) 
         {
             // Iterate over all entries in the daCapacities map
             for (Map.Entry<AID, String> entry : daCapacities.entrySet()) {
                 AID daAgent = entry.getKey();
                 Integer capacity = Integer.parseInt(entry.getValue());
-
-                /*  seperate location and generate route */
                 List<Coordinate> notYetOptimize = new ArrayList<>();
                 int tempTotalCapacity = 0;
+                
                 for (Map.Entry<Coordinate, Integer> entry2 : fileData.entrySet()) {
-                    // if didnt exceed DA's capacity && havent taken by other DA, then this address will be assigned to current DA
-                    if(tempTotalCapacity + entry2.getValue() <= capacity && !usedCoordinates.contains(entry2.getKey()) ) {
-                        tempTotalCapacity += entry2.getValue();
-                        notYetOptimize.add(entry2.getKey());
-                        usedCoordinates.add(entry2.getKey());
-                    }
-                    else {
-                        break; // stop iteration if current DA no capacity left or no more parcel to sent
+                    if (!usedCoordinates.contains(entry2.getKey())) {
+                        if (tempTotalCapacity + entry2.getValue() <= capacity) {
+                            tempTotalCapacity += entry2.getValue();
+                            notYetOptimize.add(entry2.getKey());
+                            usedCoordinates.add(entry2.getKey());
+                        }
                     }
                 }
 
@@ -227,7 +255,7 @@ public class MRA extends Agent {
                 Coordinate centerWarehouse = new Coordinate(1.532302, 110.357173);
                 // in case no more parcel to are in the list: in 2nd batch, maybe all the parcel has been taken and no more parcel left for other agent
                 // if no parcel, just skip the optimize and sent inform process to avoid error 
-                if (notYetOptimize.size() != 0) {
+                if (!notYetOptimize.isEmpty()) {
                     notYetOptimize.add(0, centerWarehouse);
                     List<Integer> distances = calculateDistances(notYetOptimize);
                     printDistanceReference(notYetOptimize, distances); // print distance between address, can delete, for understanding and debug purpose
@@ -270,7 +298,7 @@ public class MRA extends Agent {
                     Gson gson = new Gson();
                     String optimizedRouteJson = gson.toJson(optimizedRoute);
                     inform.setContent(optimizedRouteJson);
-                    inform.setConversationId("route-response"); 
+                    inform.setConversationId("route-details"); 
 
                     this.send(inform); 
                     System.out.println("MRA: Route assigned to " + daAgent.getLocalName() + ": " + route);
@@ -282,65 +310,44 @@ public class MRA extends Agent {
             for (AID daAgent : daCapacities.keySet()) {
                 routeRequestSent.put(daAgent, false);
             }
-            
-            if (usedCoordinates.size() != fileData.size()) {
-                gotParcel = true;
-            }
-            else {
-                gotParcel = false;
-            }
         }
-    }
-
-    
-    private void resetState() {
-        daCapacities.clear();
-        agreeDAs.clear();
-        allResponsesReceived = false;  // Resetting all the state variables
-        routeRequestSent.clear(); // Clear routeRequestSent map
-        System.out.println("MRA: State has been reset for a new cycle.");
+    	
     }
 
 
-    protected void takeDown() {
-        try {
-            DFService.deregister(this);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static Map<Coordinate, Integer> readCoordinatesFromFile(String fileName) 
-    {
+    public static Map<Coordinate, Integer> readCoordinatesFromFile(String fileName) {
         Map<Coordinate, Integer> coordinateInfoMap = new HashMap<>();
         BufferedReader reader;
-        try 
-        {
+        try {
             reader = new BufferedReader(new FileReader(fileName));
             String line = reader.readLine();
-            while (line != null) 
-            {
-                String[] parts = line.split(",");
-                if (parts.length == 3) 
-                {
-                    double latitude = Double.parseDouble(parts[0]);
-                    double longitude = Double.parseDouble(parts[1]);
-                    int capacity = Integer.parseInt(parts[2]);
-                    Coordinate coordinate = new Coordinate(latitude, longitude);
-                    coordinateInfoMap.put(coordinate, capacity);
-                } 
-                else 
-                {
-                    System.err.println("Invalid format: " + line);
+            int lineCount = 0;  // To track which line is being processed
+
+            while (line != null) {
+                lineCount++;
+                String[] parts = line.trim().split(",");
+                if (parts.length == 3) {
+                    try {
+                    	double latitude = Double.parseDouble(parts[0]);
+                        double longitude = Double.parseDouble(parts[1]);
+                        int capacity = Integer.parseInt(parts[2]);
+                        Coordinate coordinate = new Coordinate(latitude, longitude);
+                        coordinateInfoMap.put(coordinate, capacity);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Invalid number format on line " + lineCount + ": " + line);
+                    }
+                } else {
+                    System.err.println("Invalid format on line " + lineCount + ": " + line);
                 }
                 line = reader.readLine();
             }
             reader.close();
-        } 
-        catch (IOException e) 
-        {
-            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + fileName);
+        } catch (IOException e) {
+            System.err.println("Error reading the file: " + e.getMessage());
         }
+        System.out.println("Total coordinates read: " + coordinateInfoMap.size());
         return coordinateInfoMap;
     }
 
@@ -418,4 +425,23 @@ public class MRA extends Agent {
         
         return integerSequence;
     }
+    
+    private void resetState() {
+        daCapacities.clear();
+        agreeDAs.clear();
+        allResponsesReceived = false;  // Resetting all the state variables
+        routeRequestSent.clear(); // Clear routeRequestSent map
+        System.out.println("MRA: State has been reset for a new cycle.");
+    }
+
+
+    protected void takeDown() {
+        try {
+            DFService.deregister(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
+
+
