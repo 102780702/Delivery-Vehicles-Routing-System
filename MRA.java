@@ -207,10 +207,14 @@ public class MRA extends Agent {
     	Map<Coordinate, Integer> fileData = new HashMap<>();
         String fileName = "coordinates.txt";
         fileData = readCoordinatesFromFile(fileName);
-        while (usedCoordinates.size() != fileData.size()) 
+        int count = 0;
+        while (usedCoordinates.size() != fileData.size())
         {
+            System.out.println("BATCH: " + count);
+            count++;
             // Iterate over all entries in the daCapacities map
             for (Map.Entry<AID, String> entry : daCapacities.entrySet()) {
+                int tempTotalCapacity = 0;
                 AID daAgent = entry.getKey();
                 
                 // Check if the DA is available for new route assignment
@@ -218,7 +222,6 @@ public class MRA extends Agent {
                 	
 	                Integer capacity = Integer.parseInt(entry.getValue());
 	                List<Coordinate> notYetOptimize = new ArrayList<>();
-	                int tempTotalCapacity = 0;
 	                
 	                for (Map.Entry<Coordinate, Integer> entry2 : fileData.entrySet()) {
 	                    if (!usedCoordinates.contains(entry2.getKey())) {
@@ -283,9 +286,7 @@ public class MRA extends Agent {
 	                    System.out.println("MRA: Route assigned to " + daAgent.getLocalName() + ": " + route);
 	                  
 	                }
-	                continue;
-                }
-                
+                } 
             }
 
             // initialize all DA status
