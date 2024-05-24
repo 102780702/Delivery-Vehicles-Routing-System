@@ -9,8 +9,10 @@
 
 **Communication Diagram**
 
-![image](https://github.com/102780702/Delivery-Vehicles-Routing-System/assets/145240138/9a7f740c-1e31-4d3d-865d-f4ea90ca4942)
+![communication_diagram](https://github.com/102780702/Delivery-Vehicles-Routing-System/assets/145240138/9de48145-1bf6-4676-b196-0595fed6bac3)
+![communication_diagram](https://github.com/102780702/Delivery-Vehicles-Routing-System/assets/145240138/9de48145-1bf6-4676-b196-0595fed6bac3)
 
 **Communication Diagram - Sniffer Version**
 
 ![image](https://github.com/102780702/Delivery-Vehicles-Routing-System/assets/145240138/b43e4ea3-ce93-457f-ada6-6f72bbd2c053)
+
