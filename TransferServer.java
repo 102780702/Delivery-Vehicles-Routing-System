@@ -1,148 +1,176 @@
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.google.gson.Gson;
 import fi.iki.elonen.NanoHTTPD;
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // need varibles and set method to store output data, remember to recompile
 
 public class TransferServer extends NanoHTTPD 
 {
-    List<String> keyNames = Arrays.asList("Area_A", "Area_B", "Area_C", "Area_D");
-
-    // Json list
-    List<Map<String, List<List<Coordinate>>>> dataList = new ArrayList<>();
-    List<Map<String, List<Coordinate>>> listOfAreasAndItsShortestPath = new ArrayList<>();
-
-    private void createNewMap() 
-    {
-        Map<String, List<Coordinate>> temp = new HashMap<>();
-        List<Coordinate> areaA = new ArrayList<>();
-        List<Coordinate> areaB = new ArrayList<>();
-        List<Coordinate> areaC = new ArrayList<>();
-        List<Coordinate> areaD = new ArrayList<>();
-        List<List<Coordinate>> areas = new ArrayList<>();
-
-        areas.add(areaA);
-        areas.add(areaB);
-        areas.add(areaC);
-        areas.add(areaD);
-        
-        for (int i = 0; i < areas.size(); i++ ) {
-            temp.put(keyNames.get(i), areas.get(i));
-        }
-        
-        listOfAreasAndItsShortestPath.add(temp);
-    }
 
     public TransferServer(int port) 
     {
         super(port);
     }
 
-    public void passDataToServer(List<List<Coordinate>> batchesOdShortestPath) 
-    {
-        if(listOfAreasAndItsShortestPath.isEmpty()) 
-        {
-            createNewMap();
-        }
-        
-        int index = 0;
-        boolean inserted = false;
-        for (Map<String, List<Coordinate>> map : listOfAreasAndItsShortestPath) 
-        {
-            Collection<List<Coordinate>> allLists = map.values();
-
-            boolean full = true;
-            List<Coordinate> tempList = new ArrayList<>();
-            for (List<Coordinate> list : allLists) 
-            {
-                if(list.isEmpty()) 
-                {
-                    if (inserted == true) 
-                    {
-                        full = true;
-                        break;
-                    }
-                    else 
-                    {
-                        full = false;
-                        tempList = list;
-                        break;
-                    }
-                }
-            }
-
-            if(full == false) 
-            {
-                if (batchesOdShortestPath.get(index) != null) 
-                {
-                    tempList.addAll(batchesOdShortestPath.get(index));
-                    index++;
-                    inserted = true;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < listOfAreasAndItsShortestPath.size(); i++) 
-                {
-                    if (i == listOfAreasAndItsShortestPath.size() - 1) 
-                    {
-                        if(map == listOfAreasAndItsShortestPath.get(i))
-                        {
-                            createNewMap();
-                        }
-                    }
-                }
-                inserted = false;
-            }
-        }
-    }
-
     @Override
-    public Response serve(IHTTPSession session) 
-    {
-        // Test data, DAs should format the data like this
+    public Response serve(IHTTPSession session) {
+        File directory = new File("../Delivery-Vehicles-Routing-System"); 
+        File[] files = directory.listFiles();
 
-        
+        int maxRouteNumber = -1;
+        Pattern pattern = Pattern.compile("DA(\\d+)_Route(\\d+)\\.txt");
+        for (File file : files) {
+            if (file.isFile() && file.getName().endsWith(".txt")) {
+                // Check if the file matches the pattern
+                Matcher matcher = pattern.matcher(file.getName());
+                if (matcher.matches()) {
+                    // Extract route number from the filename
+                    int routeNumber = Integer.parseInt(matcher.group(2));
 
-        // 2nd batch delivery (ABCD)
-        //  Map<String, List<List<Coordinate>>> map2 = new HashMap<>();
+                    // Update maxRouteNumber and fileWithMaxRoute if applicable
+                    if (routeNumber > maxRouteNumber) {
+                        maxRouteNumber = routeNumber;
+                    }
+                }
+            }
+        }
 
-        // List<List<Coordinate>> area2A = new ArrayList<>();
-        // List<List<Coordinate>> area2B = new ArrayList<>();
-        
-        // List<Coordinate> coordinates2A = new ArrayList<>();
-        // List<Coordinate> coordinates2B = new ArrayList<>();
+        List<Map<String, List<List<Coordinate>>>> dataList = new ArrayList<>();
 
-        // C,D......
+        for (int RouteIndex = 1; RouteIndex <= maxRouteNumber; RouteIndex++) {
+        Map<String, List<List<Coordinate>>> map = new HashMap<>();
 
-        // Area A
-        // coordinates2A.add(new Coordinate(1.532302,110.357173));
-        // coordinates2A.add(new Coordinate(1.487123,110.341599));
-        // coordinates2A.add(new Coordinate(1.507103,110.360874));
+        File directory2 = new File("../Delivery-Vehicles-Routing-System"); 
+        File[] listOfFiles = directory2.listFiles();
 
-        // Area B
-        // coordinates2B.add(new Coordinate(1.532302,110.357173));
-        // coordinates2B.add(new Coordinate(1.555485,110.342379));
-        // coordinates2B.add(new Coordinate(1.588484,110.360216));
+        for (File file : listOfFiles) {
+            if (file.isFile() && file.getName().contains("_Route" + RouteIndex) && file.getName().endsWith(".txt")) {
+                String fileName = file.getName();
+                int daNumber;
+                int routeNumber; 
 
-        // area2A.add(coordinates2A);
-        // area2B.add(coordinates2B);
 
-        // map2.put("Area_A", area2A);
-        // map2.put("Area_B", area2B);
-
-        // put batches into json list
-        // dataList.add(map1);
-        // dataList.add(map2);
-
+                String fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf("."));
+                int routeIndex = fileNameWithoutExtension.indexOf("Route");
+                if (routeIndex != -1) {
+                    int startIndex = routeIndex + 5;
+                    int endIndex = fileNameWithoutExtension.length();
+                    String routeNumberStr = fileNameWithoutExtension.substring(startIndex, endIndex);
+                    if (routeNumberStr.matches("\\d+")) {
+                        routeNumber = Integer.parseInt(routeNumberStr);
+                        daNumber = Integer.parseInt(fileName.substring(2, 3));
+                        String areaKey = "area1" + (char) ('A' + daNumber - 1);
+                        String coordinateKey = "coordinate1" + (char) ('A' + daNumber - 1);
+                        String superareaKey = "Area_" + (char) ('A' + daNumber - 1);
+            
+                        switch (daNumber) {
+                            case 1:
+                                List<List<Coordinate>> areaData = new ArrayList<>();
+                                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                                    String line;
+                                    List<Coordinate> coordinateData = new ArrayList<>();
+                                    while ((line = reader.readLine()) != null) {
+                                        String[] parts = line.split(",");
+                                        double latitude = Double.parseDouble(parts[0]);
+                                        double longitude = Double.parseDouble(parts[1]);
+                                        coordinateData.add(new Coordinate(latitude, longitude));
+                                    }
+                                    areaData.add(coordinateData);
+                                    map.put(superareaKey, areaData);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            case 2:
+                                List<List<Coordinate>> areaData2 = new ArrayList<>();
+                                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                                    String line;
+                                    List<Coordinate> coordinateData2 = new ArrayList<>();
+                                    while ((line = reader.readLine()) != null) {
+                                        String[] parts = line.split(",");
+                                        double latitude = Double.parseDouble(parts[0]);
+                                        double longitude = Double.parseDouble(parts[1]);
+                                        coordinateData2.add(new Coordinate(latitude, longitude));
+                                    }
+                                    areaData2.add(coordinateData2);
+                                    map.put(superareaKey, areaData2);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            case 3:
+                                List<List<Coordinate>> areaData3 = new ArrayList<>();
+                                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                                    String line;
+                                    List<Coordinate> coordinateData3 = new ArrayList<>();
+                                    while ((line = reader.readLine()) != null) {
+                                        String[] parts = line.split(",");
+                                        double latitude = Double.parseDouble(parts[0]);
+                                        double longitude = Double.parseDouble(parts[1]);
+                                        coordinateData3.add(new Coordinate(latitude, longitude));
+                                    }
+                                    areaData3.add(coordinateData3);
+                                    map.put(superareaKey, areaData3);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            case 4:
+                                List<List<Coordinate>> areaData4 = new ArrayList<>();
+                                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                                    String line;
+                                    List<Coordinate> coordinateData4 = new ArrayList<>();
+                                    while ((line = reader.readLine()) != null) {
+                                        String[] parts = line.split(",");
+                                        double latitude = Double.parseDouble(parts[0]);
+                                        double longitude = Double.parseDouble(parts[1]);
+                                        coordinateData4.add(new Coordinate(latitude, longitude));
+                                    }
+                                    areaData4.add(coordinateData4);
+                                    map.put(superareaKey, areaData4);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            // Add more cases for other DA values if needed
+                        }
+                        System.out.println("Content of dataList: " + dataList);
+                        System.err.println("File name does contain 'Route' substring: " + fileName);
+                        System.err.println("File name No extension: " + fileNameWithoutExtension);
+                        System.err.println("'Route' index: " + routeIndex);
+                        System.err.println("'Start' index: " + startIndex);
+                        System.err.println("'End' index: " + endIndex);
+                        System.err.println("Route number string: " + routeNumberStr);
+                        System.err.println("Route number: " + routeNumber);
+                        System.err.println("DA number: " + daNumber);
+                        System.err.println("area key: " + areaKey);
+                        System.err.println("coordinate key: " + coordinateKey);
+                        System.err.println("area: " + superareaKey);
+                    } else {
+                        // Handle invalid file name format
+                        System.err.println("Invalid file name format: " + fileName);
+                        continue;
+                    }
+                } else {
+                    // Handle file name without "Route" substring
+                    System.err.println("File name does not contain 'Route' substring: " + fileName);
+                    continue;
+                }
+            }
+        }
+        dataList.add(map);
+        }
         Gson gson = new Gson();
-        String data = gson.toJson(listOfAreasAndItsShortestPath);
+        String data = gson.toJson(dataList);
 
         Response response = newFixedLengthResponse(Response.Status.OK, "application/json", data);
         response.addHeader("Access-Control-Allow-Origin", "*");

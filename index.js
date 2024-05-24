@@ -15,10 +15,10 @@ fetch('http://localhost:8080')
                     let area = [];
                     areaData.forEach(coordinates => {
                         let coordinateList = [];
-                        // coordinates.forEach(coordinate => {
+                        coordinates.forEach(coordinate => {
                             let coord = {lat: coordinate.latitude, lng: coordinate.longitude};
                             coordinateList.push(coord);
-                        //})
+                        })
                         area.push(coordinateList);
                     });
                         
@@ -27,26 +27,47 @@ fetch('http://localhost:8080')
             }
             batches.push(mapData);
         });
-        initMap();
+        initMap(currentIndex);
     })
     .catch(error => console.error('Error:', error));
 
-async function initMap() 
+async function initMap(batchindex) 
 {
     // The location of Swinburne Sarawak
     const position = { lat: 1.532302, lng: 110.357173 };
+    const positionSecondMap = { lat: 1.532302, lng: 110.357173 };
 
     const { Map } = await google.maps.importLibrary("maps");
     const { AdvancedMarkerView } = await google.maps.importLibrary("marker");
 
-    // The map, centered at Swinburne Sarawak
-    map = new Map(document.getElementById("map"), {
+    // Create a new div element
+    const newDiv = document.createElement("div");
+    const newP = document.createElement("p");
+
+    // Set the id of the div using the counter
+    newDiv.id = `map${batchindex}`;
+
+    // Set some content for the div (optional)
+    newDiv.textContent = "This is div " + batchindex;
+
+    map = new Map(newDiv, {
         zoom: 13,
         center: position,
-        mapId: "MAP_01",
+        mapId: `MAP_0${batchindex}`,
     });
 
-    var batch = batches[currentIndex];
+    newDiv.style.height = "700px";
+    newDiv.style.width = "100%";
+    newDiv.style.backgroundColor = "#ccc";
+
+    // Append the new div to the container div
+    document.getElementById("container").appendChild(newDiv);
+    document.getElementById("container").appendChild(newP);
+
+    console.log("index: ", batchindex);
+    console.log("mapdata: ", batches[batchindex]);
+
+    var batch = batches[batchindex];
     let Area_A = []
     let Area_B = []
     let Area_C = []
@@ -118,17 +139,18 @@ async function initMap()
         var markerLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
         // Function to render route and markers for an area
-        function renderRouteAndMarkers(area, index, color) 
+        const mapIndex = 0;
+        function renderRouteAndMarkers(area, mapIndex, color) 
         {
-            if (index >= area.length - 1) {
+            if (mapIndex >= area.length - 1) {
                 return;
             }
     
             // Marker setting
             var marker = new google.maps.Marker({
-                position: area[index],
+                position: area[ mapIndex],
                 map: map,
-                label: markerLetters[index % markerLetters.length],
+                label: markerLetters[mapIndex % markerLetters.length],
                 icon: {
                     path: google.maps.SymbolPath.CIRCLE,
                     fillColor: color,
@@ -140,9 +162,9 @@ async function initMap()
             });
     
             var nextMarker = new google.maps.Marker({
-                position: area[index + 1],
+                position: area[mapIndex + 1],
                 map: map,
-                label: markerLetters[(index + 1) % markerLetters.length],
+                label: markerLetters[(mapIndex + 1) % markerLetters.length],
                 icon: {
                     path: google.maps.SymbolPath.CIRCLE,
                     fillColor: color,
@@ -164,8 +186,8 @@ async function initMap()
     
             var request = 
             {
-                origin: area[index],
-                destination: area[index + 1],
+                origin: area[mapIndex],
+                destination: area[mapIndex + 1],
                 travelMode: google.maps.TravelMode.DRIVING
             };
     
@@ -180,14 +202,14 @@ async function initMap()
             directionsRenderers.push(directionsRenderer);
     
             // Render next route and markers
-            renderRouteAndMarkers(area, index + 1, color);
+            renderRouteAndMarkers(area, mapIndex + 1, color);
         }
 
         // Render routes and markers for each area with different colors
-        renderRouteAndMarkers(Area_A, index, '#3366FF'); // Blue
-        renderRouteAndMarkers(Area_B, index, '#FF3333'); // Red
-        renderRouteAndMarkers(Area_C, index, '#DC6B19'); // Orange
-        renderRouteAndMarkers(Area_D, index, '#D862BC'); // Purple
+        renderRouteAndMarkers(Area_A, mapIndex, '#3366FF'); // Blue
+        renderRouteAndMarkers(Area_B, mapIndex, '#FF3333'); // Red
+        renderRouteAndMarkers(Area_C, mapIndex, '#DC6B19'); // Orange
+        renderRouteAndMarkers(Area_D, mapIndex, '#D862BC'); // Purple
     
         // Function to check if all routes have been rendered
         function checkAllRoutesRendered() 
@@ -213,7 +235,11 @@ async function initMap()
         }, 100);
     }
     
-    calculateRoute(0);
+
+    calculateRoute(batchindex);
+    if (batchindex < (batches.length - 1)){
+        initMap(batchindex + 1);
+    }
 }
 
 // document.getElementById('yourButtonId').addEventListener('click', function() 

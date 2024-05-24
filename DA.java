@@ -1,69 +1,161 @@
 import jade.core.Agent;
+import jade.core.AID;
+import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.OneShotBehaviour;
+import jade.domain.DFService;
+import jade.domain.FIPANames;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.proto.AchieveREInitiator;
 import jade.proto.AchieveREResponder;
-import jade.domain.FIPANames;
-import jade.domain.FIPAAgentManagement.NotUnderstoodException;
-import jade.domain.FIPAAgentManagement.RefuseException;
-import jade.domain.FIPAAgentManagement.FailureException;
-
-import java.util.Random;
 
 public class DA extends Agent {
-    private int capacity;
-
+    private boolean isAvailable = true;  // Set based on the agent's status or conditions
+    private boolean routeRequestReceived = false;
+    private String capacity;
+    
     protected void setup() {
-        // Generate a random capacity value
-        Random rand = new Random();
-        capacity = rand.nextInt(100) + 1; // Generates a random integer between 1 and 100 (inclusive)
+    	
+    	//Get capacity argument
+    	Object[] args = getArguments();
+        if (args != null && args.length > 0) {
+            capacity = (String) args[0];  
+            System.out.println(getLocalName() + ": Capacity set to " + capacity);
+        } else {
+            System.err.println("Error: No capacity provided. Defaulting to 100.");
+            capacity = "100";  // Default capacity if none provided
+        }
+        
+        registerAgent();
+        setupRequestResponder();
+        listenForRouteRequest();
+    }
 
-        System.out.println(getLocalName() + ": Waiting for routing requests...");
-        // Message template to listen only for messages matching the correct interaction protocol and performative
-        MessageTemplate template = MessageTemplate.and(
-                MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
-                MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
+    // Register agent to DF
+    private void registerAgent() {
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(getAID());
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("DeliveryAgent");
+        sd.setName(getLocalName() + "-Delivery");
+        dfd.addServices(sd);
 
-        // Add the AchieveREResponder behaviour which implements the responder role in a FIPA_REQUEST interaction protocol
+        try {
+            DFService.register(this, dfd);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Respond to initial request from MRA
+    // AGREE and INFORM capacity
+    private void setupRequestResponder() {
+        MessageTemplate template = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
         addBehaviour(new AchieveREResponder(this, template) {
-            protected ACLMessage prepareResponse(ACLMessage request) throws
-            NotUnderstoodException, RefuseException {
-                System.out.println(getLocalName() + ": REQUEST received from " +
-                        request.getSender().getName() + ". Content is: " + request.getContent());
-
-                // Inform MRA that the request has been taken and provide capacity information
-                System.out.println(getLocalName() + ": Agreeing to take the request and informing capacity to MRA.");
-                ACLMessage agree = request.createReply();
-                agree.setPerformative(ACLMessage.AGREE);
-
-                // Include capacity information in the message content
-                String capacityMsg = "Request taken. Capacity: " + capacity;
-                agree.setContent(capacityMsg);
-
-                // Informing capacity to MRA
-                System.out.println(getLocalName() + ": Capacity information sent to MRA: " + capacityMsg);
-
-                return agree;
+            protected ACLMessage handleRequest(ACLMessage request) {
+                ACLMessage reply = request.createReply();
+                if (isAvailable) {
+                    reply.setPerformative(ACLMessage.AGREE);
+                    System.out.println(getLocalName() + ": Available for routing tasks.");
+                } else {
+                    reply.setPerformative(ACLMessage.REFUSE);
+                    System.out.println(getLocalName() + ": Not available for routing tasks.");
+                }
+                return reply;
             }
 
-            protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response)
-                    throws FailureException {
-
-
-                // Extract route from MRA's response
-                String route = response.getContent();
-
-
-                // Perform the action of providing optimized route information
-                System.out.println(getLocalName() + ": Received route from MRA: " + route);
-
-                
-                // Inform MRA that the request has been completed
-                System.out.println(getLocalName() + ": Informing MRA that the request has been completed.");
-                ACLMessage inform = request.createReply();
-                inform.setPerformative(ACLMessage.INFORM);
-                inform.setContent("Request completed"); // Informing MRA about request completion
-                return inform;
+            protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) {
+                if (response.getPerformative() == ACLMessage.AGREE) {
+                    ACLMessage inform = request.createReply();
+                    inform.setPerformative(ACLMessage.INFORM);
+                    inform.setContent(capacity);
+                    inform.addUserDefinedParameter("customConversationId", "capacity-inform");
+                    System.out.println(inform.getConversationId());
+                    return inform;
+                } else {
+                    return null;  // No further action required if refused
+                }
             }
         });
+    }
+
+    // Listen for MRA REQUEST to send REQUEST for route
+    private void listenForRouteRequest() {
+        MessageTemplate mt = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+            MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST)
+        );
+        addBehaviour(new CyclicBehaviour(this) {
+            public void action() {
+                ACLMessage msg = receive(mt);
+                if (msg != null && msg.getContent().equals("Please request your route") && !routeRequestReceived) {
+                    System.out.println(getLocalName() + ": Received route request from MRA.");
+                    // Request the route details from MRA
+                    requestRouteFromMRA();
+                    routeRequestReceived = true; // Set the flag to indicate that a route request has been processed
+                } else {
+                    block();
+                }
+            }
+        });
+    }
+
+    // REQUEST route
+    private void requestRouteFromMRA() {
+        ACLMessage request = new ACLMessage(ACLMessage.REQUEST);
+        request.addReceiver(new AID("MRA", AID.ISLOCALNAME));
+        request.setContent("Requesting route details");
+        request.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);  
+        request.setConversationId("route-request");
+        send(request);
+        System.out.println(getLocalName() + ": Requested route details from MRA.");
+        listenForRouteDetails();
+    }
+
+    // Listen for route details
+    // Trigger perform task
+    private void listenForRouteDetails() {
+        MessageTemplate mt = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+            MessageTemplate.MatchConversationId("route-details")  // Ensuring we're matching the right conversation ID
+        );
+        addBehaviour(new CyclicBehaviour(this) {
+            public void action() {
+                ACLMessage msg = receive(mt);
+                if (msg != null) {
+                    System.out.println(getLocalName() + ": Received route details from MRA.");
+                    performTask(msg.getContent());
+                } else {
+                    block();
+                }
+            }
+        });
+    }
+
+    
+    //Perform task
+    private void performTask(String routeDetails) {
+        System.out.println(getLocalName() + ": Performing task based on route: " + routeDetails);
+        
+        //TASK
+        
+        // Assuming the task is completed successfully
+        ACLMessage completionMsg = new ACLMessage(ACLMessage.INFORM);
+        completionMsg.addReceiver(new AID("MRA", AID.ISLOCALNAME));
+        completionMsg.setContent("Task completed successfully.");
+        completionMsg.setConversationId("task-completed");
+        send(completionMsg);
+        System.out.println(getLocalName() + ": Sent task completion message to MRA.");
+        routeRequestReceived = false; // Reset the flag after performing the task
+    }
+
+    protected void takeDown() {
+        try {
+            DFService.deregister(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

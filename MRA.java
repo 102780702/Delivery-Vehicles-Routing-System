@@ -12,6 +12,7 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,27 +22,31 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+
+
 import com.google.gson.Gson;
+import java.io.File;
+import fi.iki.elonen.NanoHTTPD;
 
 public class MRA extends Agent {
 	private Map<AID, String> daCapacities = new HashMap<>();
     private Set<AID> agreeDAs = new HashSet<>();
     private Set<AID> routerequestDAs = new HashSet<>();
-    private boolean allResponsesReceived = false;
     private Map<AID, Boolean> routeRequestSent = new HashMap<>();
+    private Set<AID> availableDAs = new HashSet<>();
+    private Map<AID, Integer> daRouteCount = new HashMap<>();
 
-    private Map<Coordinate, Integer> fileData = new HashMap<>();
     Set<Coordinate> usedCoordinates = new HashSet<>(); // address that already taken by other DA
 
     protected void setup() {
     	
+    	//Reset all variables
         resetState();
-
-        // read txt file
-        String fileName = "coordinates.txt";
-        fileData = readCoordinatesFromFile(fileName);
 
         // Register the MRA agent with the DF service
         DFAgentDescription dfd = new DFAgentDescription();
@@ -71,8 +76,7 @@ public class MRA extends Agent {
             if (msg != null) {
                 System.out.println("MRA: Received CFP from " + msg.getSender().getName());
                 addBehaviour(new RequestBehaviour());
-                addBehaviour(new CapacityCollectingBehaviour());
-                
+                addBehaviour(new CapacityCollectingBehaviour());    
                 
             } else {
                 block();
@@ -129,8 +133,6 @@ public class MRA extends Agent {
 
         protected void handleAllResultNotifications(Vector notifications) {
             System.out.println("MRA: All responses received from DAs.");
-            allResponsesReceived = true;
-            addBehaviour(new CapacityCollectingBehaviour()); 
         }
     }
 
@@ -141,7 +143,8 @@ public class MRA extends Agent {
             MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
             ACLMessage msg = receive(mt);
             if (msg != null) {
-                if (!msg.getConversationId().equals("route-request")) {
+            	System.out.println(msg.getConversationId());
+                if (!msg.getConversationId().equals("route-request") && !msg.getConversationId().equals("task-completed")) {
                     processCapacityMessage(msg);
                     if (!routeRequestSent.containsKey(msg.getSender()) || !routeRequestSent.get(msg.getSender())) {
                         sendRouteRequest(msg.getSender());
@@ -175,7 +178,7 @@ public class MRA extends Agent {
     
     
     // Listens for route request
-    // Triggers initial route generation once all DAs have requested for route and informed capacity
+    // Triggers route generation once all DAs have requested for route and informed capacity
     private class RouteRequestListener extends CyclicBehaviour {
         public RouteRequestListener(Agent a) {
             super(a);
@@ -191,6 +194,7 @@ public class MRA extends Agent {
             if (request != null) {
                 System.out.println("MRA: Received route request from " + request.getSender().getName());
                 routerequestDAs.add(request.getSender());
+                availableDAs.add(request.getSender());
 
                 // Check if all DAs have sent a request
                 if (routerequestDAs.equals(daCapacities.keySet())) {
@@ -202,143 +206,175 @@ public class MRA extends Agent {
             }
         }
     }
-
-    
+     
     private void startRouteGeneration() {
-        while (usedCoordinates.size() != fileData.size()) 
-        {
-            // Iterate over all entries in the daCapacities map
+        Map<Coordinate, Integer> fileData = new HashMap<>();
+        String fileName = "coordinates_capacity.txt";
+        fileData = readCoordinatesFromFile(fileName);
+    
+        while (usedCoordinates.size() != fileData.size()) {
             for (Map.Entry<AID, String> entry : daCapacities.entrySet()) {
                 AID daAgent = entry.getKey();
-                Integer capacity = Integer.parseInt(entry.getValue());
-
-                /*  seperate location and generate route */
-                List<Coordinate> notYetOptimize = new ArrayList<>();
-                int tempTotalCapacity = 0;
-                for (Map.Entry<Coordinate, Integer> entry2 : fileData.entrySet()) {
-                    // if didnt exceed DA's capacity && havent taken by other DA, then this address will be assigned to current DA
-                    if(tempTotalCapacity + entry2.getValue() <= capacity && !usedCoordinates.contains(entry2.getKey()) ) {
-                        tempTotalCapacity += entry2.getValue();
-                        notYetOptimize.add(entry2.getKey());
-                        usedCoordinates.add(entry2.getKey());
-                    }
-                    else {
-                        break; // stop iteration if current DA no capacity left or no more parcel to sent
-                    }
-                }
-
-                /*  optimize the route  */
-                Coordinate centerWarehouse = new Coordinate(1.532302, 110.357173);
-                // in case no more parcel to are in the list: in 2nd batch, maybe all the parcel has been taken and no more parcel left for other agent
-                // if no parcel, just skip the optimize and sent inform process to avoid error 
-                if (notYetOptimize.size() != 0) {
-                    notYetOptimize.add(0, centerWarehouse);
-                    List<Integer> distances = calculateDistances(notYetOptimize);
-                    printDistanceReference(notYetOptimize, distances); // print distance between address, can delete, for understanding and debug purpose
-
-                    // format distances data so algorithm can work
-                    int numberOfCoordinates = notYetOptimize.size();
-                    int[][] travelPrices = new int[numberOfCoordinates][numberOfCoordinates];
-                    int index = 0;
-                    for (int i = 0; i < numberOfCoordinates; i++) {
-                        for (int j = 0; j < numberOfCoordinates; j++) {
-                            if (i != j) {
-                                if (travelPrices[i][j] == 0) {
-                                    travelPrices[i][j] = distances.get(index);
-                                    travelPrices[j][i] = travelPrices[i][j];
-                                    index ++;
-                                }
+    
+                if (availableDAs.contains(daAgent)) {
+                    Integer capacity = Integer.parseInt(entry.getValue());
+                    List<Coordinate> notYetOptimize = new ArrayList<>();
+                    int tempTotalCapacity = 0;
+    
+                    for (Map.Entry<Coordinate, Integer> entry2 : fileData.entrySet()) {
+                        if (!usedCoordinates.contains(entry2.getKey())) {
+                            if (tempTotalCapacity + entry2.getValue() <= capacity) {
+                                tempTotalCapacity += entry2.getValue();
+                                notYetOptimize.add(entry2.getKey());
+                                usedCoordinates.add(entry2.getKey());
                             }
                         }
                     }
-                    printTravelPrices(travelPrices,numberOfCoordinates); // print matrix, can delete, for understanding and debug purpose
+    
+                    Coordinate centerWarehouse = new Coordinate(1.532302, 110.357173);
+    
+                    if (!notYetOptimize.isEmpty()) {
+                        notYetOptimize.add(0, centerWarehouse);
 
-                    // algorithm functions
-                    UberSalesmensch geneticAlgorithm = new UberSalesmensch(numberOfCoordinates, SelectionType.ROULETTE, travelPrices, 0, 0);
-                    SalesmanGenome result = geneticAlgorithm.optimize();
-                    
-                    // print address index, can delete, for understanding and debug purpose
-                    List<Integer> resultList = convertSalesmanGenomeToIntList(result);
-                    System.out.println(resultList);
-
-                    List<Coordinate> optimizedRoute = new ArrayList<>(); 
-                    for (int i: resultList) {
-                        optimizedRoute.add(notYetOptimize.get(i));
+                        // calculate distances between each location
+                        List<Integer> distances = calculateDistances(notYetOptimize);
+                        
+                        // format into matrix form
+                        int numberOfCoordinates = notYetOptimize.size();
+                        int[][] travelPrices = new int[numberOfCoordinates][numberOfCoordinates];
+    
+                        for (int i = 0; i < numberOfCoordinates; i++) {
+                            for (int j = 0; j < numberOfCoordinates; j++) {
+                                if (i != j) {
+                                    if (travelPrices[i][j] == 0) {
+                                        travelPrices[i][j] = distances.remove(0);
+                                        travelPrices[j][i] = travelPrices[i][j];
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // initialize algorithm and optimize the route
+                        UberSalesmensch geneticAlgorithm = new UberSalesmensch(numberOfCoordinates, SelectionType.ROULETTE, travelPrices, 0, 0);
+                        SalesmanGenome result = geneticAlgorithm.optimize();
+                        
+                        // convert genome(solution) to understandable data
+                        List<Integer> resultList = convertSalesmanGenomeToIntList(result);
+                        List<Coordinate> optimizedRoute = new ArrayList<>();
+                        for (int i : resultList) {
+                            optimizedRoute.add(notYetOptimize.get(i));
+                        }
+    
+                        // Writing route to a text file
+                        int routeNumber = daRouteCount.getOrDefault(daAgent, 0) + 1; // Increment route number
+                        daRouteCount.put(daAgent, routeNumber); // Update route count
+    
+                        String routeFileName = daAgent.getLocalName() + "_Route" + routeNumber + ".txt";
+                        writeRouteToFile(routeFileName, optimizedRoute);
+    
+                        // Send route details to DA
+                        ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
+                        inform.addReceiver(daAgent);
+    
+                        Gson gson = new Gson();
+                        String optimizedRouteJson = gson.toJson(optimizedRoute);
+                        inform.setContent(optimizedRouteJson);
+                        inform.setConversationId("route-details");
+    
+                        this.send(inform);
+                        System.out.println("MRA: Route assigned to " + daAgent.getLocalName());
                     }
-
-                    // Create a new ACL message for each DA
-                    ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
-                    inform.addReceiver(daAgent);
-                    String route = "Route for " + daAgent.getLocalName() + " with capacity " + capacity;
-                    // convert optimize route to json format and sent it to DA
-                    Gson gson = new Gson();
-                    String optimizedRouteJson = gson.toJson(optimizedRoute);
-                    inform.setContent(optimizedRouteJson);
-                    inform.setConversationId("route-response"); 
-
-                    this.send(inform); 
-                    System.out.println("MRA: Route assigned to " + daAgent.getLocalName() + ": " + route);
+                    continue;
                 }
-                
             }
-
-            // initialize all DA status
+    
             for (AID daAgent : daCapacities.keySet()) {
                 routeRequestSent.put(daAgent, false);
             }
         }
-    	
+        runTransferServer();
     }
-
     
-    private void resetState() {
-        daCapacities.clear();
-        agreeDAs.clear();
-        allResponsesReceived = false;  // Resetting all the state variables
-        routeRequestSent.clear(); // Clear routeRequestSent map
-        System.out.println("MRA: State has been reset for a new cycle.");
-    }
-
-
-    protected void takeDown() {
-        try {
-            DFService.deregister(this);
-        } catch (Exception e) {
+    private void writeRouteToFile(String fileName, List<Coordinate> route) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+            for (Coordinate coordinate : route) {
+                writer.write(coordinate.getLatitude() + ", " + coordinate.getLongitude());
+                writer.newLine();
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
+    
 
-    public static Map<Coordinate, Integer> readCoordinatesFromFile(String fileName) 
-    {
-        Map<Coordinate, Integer> coordinateInfoMap = new HashMap<>();
-        BufferedReader reader;
+    private void deleteGeneratedFiles() {
+        File folder = new File(".");
+        File[] listOfFiles = folder.listFiles();
+
+        if (listOfFiles != null) {
+            for (File file : listOfFiles) {
+                if (file.isFile() && file.getName().contains("DA") && file.getName().contains("_Route") && file.getName().endsWith(".txt")) {
+                    file.delete();
+                }
+            }
+        }
+        System.out.println("MRA: Deleted all generated files.");
+    }
+
+
+    private void runTransferServer() {
+        int port = 8080;
         try 
         {
+            TransferServer server = new TransferServer(port);
+            server.start();
+            System.out.println("Server started on port " + port);
+            // Keep the server running until interrupted
+            while (true) 
+            {
+                Thread.sleep(1000); // Sleep for a while to avoid high CPU usage
+            }
+        } 
+        catch (IOException | InterruptedException e) 
+        {
+            e.printStackTrace();
+        }
+    }
+    
+
+    public static Map<Coordinate, Integer> readCoordinatesFromFile(String fileName) {
+        Map<Coordinate, Integer> coordinateInfoMap = new HashMap<>();
+        BufferedReader reader;
+        try {
             reader = new BufferedReader(new FileReader(fileName));
             String line = reader.readLine();
-            while (line != null) 
-            {
-                String[] parts = line.split(",");
-                if (parts.length == 3) 
-                {
-                    double latitude = Double.parseDouble(parts[0]);
-                    double longitude = Double.parseDouble(parts[1]);
-                    int capacity = Integer.parseInt(parts[2]);
-                    Coordinate coordinate = new Coordinate(latitude, longitude);
-                    coordinateInfoMap.put(coordinate, capacity);
-                } 
-                else 
-                {
-                    System.err.println("Invalid format: " + line);
+            int lineCount = 0;  // To track which line is being processed
+
+            while (line != null) {
+                lineCount++;
+                String[] parts = line.trim().split(",");
+                if (parts.length == 3) {
+                    try {
+                    	double latitude = Double.parseDouble(parts[0]);
+                        double longitude = Double.parseDouble(parts[1]);
+                        int capacity = Integer.parseInt(parts[2]);
+                        Coordinate coordinate = new Coordinate(latitude, longitude);
+                        coordinateInfoMap.put(coordinate, capacity);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Invalid number format on line " + lineCount + ": " + line);
+                    }
+                } else {
+                    System.err.println("Invalid format on line " + lineCount + ": " + line);
                 }
                 line = reader.readLine();
             }
             reader.close();
-        } 
-        catch (IOException e) 
-        {
-            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + fileName);
+        } catch (IOException e) {
+            System.err.println("Error reading the file: " + e.getMessage());
         }
+        System.out.println("Total coordinates read: " + coordinateInfoMap.size());
         return coordinateInfoMap;
     }
 
@@ -416,4 +452,25 @@ public class MRA extends Agent {
         
         return integerSequence;
     }
+    
+    private void resetState() {
+        daCapacities.clear();
+        agreeDAs.clear();
+        routeRequestSent.clear(); // Clear routeRequestSent map
+        System.out.println("MRA: State has been reset for a new cycle.");
+    }
+
+
+    protected void takeDown() {
+        deleteGeneratedFiles();
+        // Deregister from DF service
+        try {
+            DFService.deregister(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
 }
+
+

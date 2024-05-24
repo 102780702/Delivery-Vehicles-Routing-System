@@ -1,4 +1,16 @@
-#map {
+#map0 {
+    height: 700px; /* The height is 400 pixels */
+    width: 100%; /* The width is the width of the web page */
+    background-color: #ccc; /* Placeholder color for the "map" *//
+}
+
+#map1 {
+    height: 700px; /* The height is 400 pixels */
+    width: 100%; /* The width is the width of the web page */
+    background-color: #ccc; /* Placeholder color for the "map" *//
+}
+
+#map2 {
     height: 700px; /* The height is 400 pixels */
     width: 100%; /* The width is the width of the web page */
     background-color: #ccc; /* Placeholder color for the "map" *//
